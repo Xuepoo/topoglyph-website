@@ -8,29 +8,6 @@
     <button class="tab-btn" data-tab="atlas">{{ trans(key="tab_atlas", lang=lang) | safe }}</button>
   </div>
 
-  <div class="usage-panel">
-    <details>
-      <summary>{{ trans(key="usage_title", lang=lang) | safe }}</summary>
-      <div class="usage-body">
-        <h3>{{ trans(key="usage_image_title", lang=lang) | safe }}</h3>
-        <ol>
-          <li>{{ trans(key="usage_image_1", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_image_2", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_image_3", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_image_4", lang=lang) | safe }}</li>
-        </ol>
-        <h3>{{ trans(key="usage_video_title", lang=lang) | safe }}</h3>
-        <ol>
-          <li>{{ trans(key="usage_video_1", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_video_2", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_video_3", lang=lang) | safe }}</li>
-          <li>{{ trans(key="usage_video_4", lang=lang) | safe }}</li>
-        </ol>
-        <h3>{{ trans(key="usage_atlas_title", lang=lang) | safe }}</h3>
-        <p>{{ trans(key="usage_atlas_1", lang=lang) | safe }}</p>
-      </div>
-    </details>
-  </div>
 
   <!-- ==================== IMAGE MODE ==================== -->
   <div class="tab-panel" data-tab-panel="image">
@@ -104,12 +81,12 @@
     <input type="file" id="file-input-video" accept="video/*" style="display: none" />
 
     <div class="actions-row" style="margin-bottom: 8px;">
-      <button class="btn" id="btn-video-convert" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
-      <a id="download-link" style="display: none"></a>
+      <button class="btn" id="btn-convert-video" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
+      <a id="btn-download-tglyph" style="display: none"></a>
     </div>
     <div class="status-line" id="status-line-video"></div>
-    <div class="progress-track" style="margin-bottom: 16px;">
-      <div class="progress-fill" id="progress-video" style="width: 0%"></div>
+    <div class="progress-track" id="video-progress-track" style="margin-bottom: 16px;">
+      <div class="progress-fill" id="video-progress-fill" style="width: 0%"></div>
     </div>
 
     {% set scope = "video-" %} {% include "charset_controls.html" %}
@@ -134,6 +111,10 @@
           <option value="han-emoji">{{ trans(key="preset_han_emoji", lang=lang) | safe }}</option>
         </select>
       </div>
+      <div class="field">
+        <label for="video-opt-fps">{{ trans(key="fps_label", lang=lang) | safe }} <span class="range-value" id="video-opt-fps-value">10</span></label>
+        <input type="range" id="video-opt-fps" min="1" max="30" step="1" value="10" />
+      </div>
     </div>
 
   </div>
@@ -142,9 +123,10 @@
   <div class="tab-panel is-hidden" data-tab-panel="atlas">
     {% set scope = "atlas-" %} {% include "charset_controls.html" %}
     <div class="actions-row" style="margin-top: 16px">
-      <button class="btn" id="btn-atlas-inspect">{{ trans(key="inspect_btn", lang=lang) | safe }}</button>
+      <button class="btn" id="btn-inspect-atlas">{{ trans(key="inspect_btn", lang=lang) | safe }}</button>
     </div>
     <div class="status-line" id="status-line-atlas"></div>
+  <div id="atlas-output-meta" class="output-meta" style="display:none"></div>
   </div>
 </div>
 {% endblock sidebar %}
@@ -162,12 +144,14 @@
 </div>
 <div class="editor-content tab-panel" data-tab-panel="image">
   <pre id="output-pre" class="empty-state">{{ trans(key="empty_output", lang=lang) | safe }}</pre>
+  <div id="output-meta" class="output-meta" style="display:none"></div>
 </div>
-  <div class="output-header">
-
 
 <div class="editor-content tab-panel is-hidden" data-tab-panel="video">
-  <pre class="empty-state">{{ trans(key="empty_playback", lang=lang) | safe }}</pre>
+  <pre id="video-output-pre" class="empty-state">{{ trans(key="empty_playback", lang=lang) | safe }}</pre>
+  <div id="video-output-meta" class="output-meta" style="display:none"></div>
+  <video id="video-source" style="display:none" crossorigin="anonymous" preload="auto"></video>
+  <canvas id="video-frame-canvas" style="display:none"></canvas>
 </div>
 
 
