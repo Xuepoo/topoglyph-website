@@ -1,6 +1,6 @@
 [package]
 name = "topoglyph-wasm-engine"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "WebAssembly bridge for TopoGlyph"
 license = "MIT"
@@ -22,10 +22,10 @@ serde-wasm-bindgen = "0.6"
 # machine with a sibling `../topoglyph` checkout, which breaks Docker/CI/
 # any other contributor's clone the same way it did for topoglyph itself
 # before that was fixed.
-topoglyph-core = "0.1.0"
-topoglyph-atlas = "0.1.0"
-topoglyph-output = "0.1.0"
-topoglyph-vectomancy = "0.1.0"
+topoglyph-core = "0.2.0"
+topoglyph-atlas = "0.2.0"
+topoglyph-output = "0.2.0"
+topoglyph-vectomancy = "0.2.0"
 
 getrandom = { version = "0.2", features = ["js"] }
 

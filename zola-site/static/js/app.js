@@ -153,8 +153,9 @@ const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
 const filenameEl = document.getElementById("filename");
 const btnRender = document.getElementById("btn-render");
-const btnCopy = document.getElementById("btn-copy");
-const btnDownload = document.getElementById("btn-download");
+const btnCopyText = document.getElementById("btn-copy-text");
+const btnCopyHtml = document.getElementById("btn-copy-html");
+const btnDownloadPng = document.getElementById("btn-download-png");
 const outputPre = document.getElementById("output-pre");
 const outputMeta = document.getElementById("output-meta");
 
@@ -197,12 +198,57 @@ function wireDropzone(dropzoneEl, fileInputEl, onFile) {
   });
 }
 
-wireDropzone(dropzone, fileInput, async (file) => {
+async function handleImageFile(file) {
   if (!file) return;
   imageBytes = new Uint8Array(await file.arrayBuffer());
   filenameEl.textContent = file.name;
   updateImageButtons();
   setImageStatus(t("js_ready"));
+
+  // Auto-calculate aspect ratio
+  if (file.type.startsWith('image/')) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      // Characters are 1:2 aspect ratio, so grid_width = grid_height * aspectRatio * 2
+      // We'll keep width at 120 and scale height, clamped between 10 and 200.
+      const targetWidth = 120;
+      let targetHeight = Math.round(targetWidth / (aspectRatio * 2));
+      targetHeight = Math.max(10, Math.min(targetHeight, 200));
+      
+      const widthInput = document.getElementById('opt-width');
+      const heightInput = document.getElementById('opt-height');
+      if (widthInput && heightInput) {
+        widthInput.value = targetWidth;
+        heightInput.value = targetHeight;
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
+}
+
+wireDropzone(dropzone, fileInput, handleImageFile);
+
+// Paste support
+document.addEventListener("paste", (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) {
+        // Automatically switch to Image tab if paste happens
+        const imageTabBtn = document.querySelector('.tab-btn[data-tab="image"]');
+        if (imageTabBtn && !imageTabBtn.classList.contains('is-active')) {
+          imageTabBtn.click();
+        }
+        handleImageFile(file);
+        break; // Only handle the first image
+      }
+    }
+  }
 });
 
 function readImageRenderOptions(prefix) {
@@ -261,8 +307,9 @@ btnRender.addEventListener("click", async () => {
       outputPre.textContent = result.text;
     }
     outputMeta.textContent = `${result.columns}x${result.rows} \u00b7 ${elapsed}ms`;
-    btnCopy.disabled = false;
-    btnDownload.disabled = false;
+    btnCopyText.disabled = false;
+    btnCopyHtml.disabled = false;
+    btnDownloadPng.disabled = false;
     setImageStatus(t("js_ready"));
   } catch (e) {
     setImageStatus(t("js_render_failed") + (e?.message ?? e), true);
@@ -271,7 +318,7 @@ btnRender.addEventListener("click", async () => {
   }
 });
 
-btnCopy.addEventListener("click", async () => {
+btnCopyText.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(outputPre.textContent);
     setImageStatus(t("js_copied"));
@@ -280,16 +327,95 @@ btnCopy.addEventListener("click", async () => {
   }
 });
 
-btnDownload.addEventListener("click", () => {
-  const blob = new Blob([outputPre.textContent], {
-    type: "text/plain;charset=utf-8",
-  });
+btnCopyHtml.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(outputPre.innerHTML);
+    setImageStatus(t("js_copied"));
+  } catch (e) {
+    setImageStatus(t("js_copy_failed") + (e?.message ?? e), true);
+  }
+});
+
+btnDownloadPng.addEventListener("click", () => {
+  setImageStatus("Rendering PNG...");
+  const width = outputPre.offsetWidth;
+  const height = outputPre.offsetHeight;
+  
+  // Get computed styles to preserve accurate look
+  const computedStyle = window.getComputedStyle(outputPre);
+  const bgColor = window.getComputedStyle(document.documentElement).getPropertyValue('--page-bg') || '#121212';
+  const textColor = window.getComputedStyle(document.documentElement).getPropertyValue('--ink') || '#e8e8e8';
+  const fontFamily = computedStyle.fontFamily.replace(/"/g, "'");
+  const fontSize = computedStyle.fontSize;
+  const lineHeight = computedStyle.lineHeight;
+  
+  const htmlStr = new XMLSerializer().serializeToString(outputPre);
+  
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+          <style>
+            pre {
+              margin: 0;
+              padding: 20px;
+              font-family: ${fontFamily};
+              font-size: ${fontSize};
+              line-height: ${lineHeight};
+              color: ${textColor};
+              white-space: pre;
+              background: ${bgColor};
+              width: 100%;
+              height: 100%;
+              box-sizing: border-box;
+            }
+          </style>
+          ${htmlStr}
+        </div>
+      </foreignObject>
+    </svg>
+  `;
+  
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "topoglyph-output.txt";
-  a.click();
-  URL.revokeObjectURL(url);
+  
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    
+    const pngUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = pngUrl;
+    a.download = "topoglyph-output.png";
+    a.click();
+    setImageStatus(t("js_ready"));
+  };
+  img.onerror = () => {
+    setImageStatus("Failed to render PNG", true);
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+// Zoom support for editor view
+let currentZoom = 11; // Matches 11px default in CSS
+outputPre.addEventListener("wheel", (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      currentZoom = Math.min(currentZoom + 1, 48);
+    } else {
+      currentZoom = Math.max(currentZoom - 1, 4);
+    }
+    outputPre.style.fontSize = `${currentZoom}px`;
+  }
 });
 
 // ---------------------------------------------------------------------------
