@@ -82,7 +82,6 @@
 
     <div class="actions-row" style="margin-bottom: 8px;">
       <button class="btn" id="btn-convert-video" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
-      <a id="btn-download-tglyph" style="display: none"></a>
     </div>
     <div class="status-line" id="status-line-video"></div>
     <div class="progress-track" id="video-progress-track" style="margin-bottom: 16px;">
@@ -148,6 +147,10 @@
 </div>
 
 <div class="editor-content tab-panel is-hidden" data-tab-panel="video">
+  <div class="editor-header" style="padding: 12px 20px; display:flex; align-items:center; gap:12px; border-bottom: 1px solid var(--paper-edge);">
+    <button class="btn" id="btn-play-pause" disabled>{{ trans(key="play_btn", lang=lang) | safe }}</button>
+    <a id="btn-download-tglyph" class="btn is-secondary" style="display:none">{{ trans(key="download_tglyph_btn", lang=lang) | safe }}</a>
+  </div>
   <pre id="video-output-pre" class="empty-state">{{ trans(key="empty_playback", lang=lang) | safe }}</pre>
   <div id="video-output-meta" class="output-meta" style="display:none"></div>
   <video id="video-source" style="display:none" crossorigin="anonymous" preload="auto"></video>
