@@ -10,20 +10,30 @@ import init, {
 // Shared state / boot
 // ---------------------------------------------------------------------------
 
+function t(key, params) {
+  let s = (window.I18N && window.I18N[key]) || key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      s = s.split(`{${k}}`).join(String(v));
+    }
+  }
+  return s;
+}
+
 let wasmReady = false;
 
 async function boot() {
   try {
     await init();
     wasmReady = true;
-    setImageStatus("Ready.");
-    setVideoStatus("Ready.");
-    setAtlasStatus("Ready.");
+    setImageStatus(t("js_ready"));
+    setVideoStatus(t("js_ready"));
+    setAtlasStatus(t("js_ready"));
     updateImageButtons();
     updateVideoButtons();
     updateAtlasButtons();
   } catch (e) {
-    const msg = "Failed to load the WebAssembly engine: " + e;
+    const msg = t("js_wasm_load_failed") + e;
     setImageStatus(msg, true);
     setVideoStatus(msg, true);
     setAtlasStatus(msg, true);
@@ -112,9 +122,7 @@ async function buildAtlasFromControls(prefix) {
     // only appears once a non-"lines" charset is selected. This is the
     // most common first-time mistake, so spell out the fix rather than
     // just naming the missing precondition.
-    throw new Error(
-      `The "${charsetLabel(charset)}" charset needs a font file. Scroll up to "Font File (TTF/OTF)" and choose one (any system font works), then try again.`,
-    );
+    throw new Error(t("js_font_needed", { charset: charsetLabel(charset) }));
   }
   const fontBytes = new Uint8Array(await fontFile.arrayBuffer());
   return AtlasHandle.fromFont(charset, customChars, fontBytes);
@@ -123,13 +131,13 @@ async function buildAtlasFromControls(prefix) {
 function charsetLabel(charset) {
   switch (charset) {
     case "ascii":
-      return "ASCII";
+      return t("js_charset_ascii");
     case "blocks":
-      return "Blocks";
+      return t("js_charset_blocks");
     case "braille":
-      return "Braille";
+      return t("js_charset_braille");
     case "custom":
-      return "Custom characters";
+      return t("js_charset_custom");
     default:
       return charset;
   }
@@ -194,7 +202,7 @@ wireDropzone(dropzone, fileInput, async (file) => {
   imageBytes = new Uint8Array(await file.arrayBuffer());
   filenameEl.textContent = file.name;
   updateImageButtons();
-  setImageStatus("Ready.");
+  setImageStatus(t("js_ready"));
 });
 
 function readImageRenderOptions(prefix) {
@@ -230,7 +238,7 @@ function readImageRenderOptions(prefix) {
 btnRender.addEventListener("click", async () => {
   if (!imageBytes) return;
   btnRender.disabled = true;
-  setImageStatus("Rendering&hellip;");
+  setImageStatus(t("js_rendering"));
 
   try {
     const options = readImageRenderOptions("");
@@ -255,9 +263,9 @@ btnRender.addEventListener("click", async () => {
     outputMeta.textContent = `${result.columns}x${result.rows} \u00b7 ${elapsed}ms`;
     btnCopy.disabled = false;
     btnDownload.disabled = false;
-    setImageStatus("Ready.");
+    setImageStatus(t("js_ready"));
   } catch (e) {
-    setImageStatus("Render failed: " + (e?.message ?? e), true);
+    setImageStatus(t("js_render_failed") + (e?.message ?? e), true);
   } finally {
     updateImageButtons();
   }
@@ -266,9 +274,9 @@ btnRender.addEventListener("click", async () => {
 btnCopy.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(outputPre.textContent);
-    setImageStatus("Copied to clipboard.");
+    setImageStatus(t("js_copied"));
   } catch (e) {
-    setImageStatus("Could not copy: " + (e?.message ?? e), true);
+    setImageStatus(t("js_copy_failed") + (e?.message ?? e), true);
   }
 });
 
@@ -317,7 +325,7 @@ wireDropzone(videoDropzone, videoFileInput, (file) => {
   videoFile = file;
   videoFilenameEl.textContent = file.name;
   updateVideoButtons();
-  setVideoStatus("Ready.");
+  setVideoStatus(t("js_ready"));
 });
 
 /**
@@ -335,8 +343,7 @@ async function* extractFrames(file, sampleFps) {
     videoEl.src = url;
     await new Promise((resolve, reject) => {
       videoEl.onloadedmetadata = resolve;
-      videoEl.onerror = () =>
-        reject(new Error("Could not decode this file as a video."));
+      videoEl.onerror = () => reject(new Error(t("js_decode_failed")));
     });
 
     const duration = videoEl.duration;
@@ -371,7 +378,7 @@ btnConvertVideo.addEventListener("click", async () => {
   stopPlayback();
   progressTrack.style.display = "";
   progressFill.style.width = "0%";
-  setVideoStatus("Extracting frames&hellip;");
+  setVideoStatus(t("js_extracting"));
 
   try {
     const atlas = await buildAtlasFromControls("video-");
@@ -389,23 +396,26 @@ btnConvertVideo.addEventListener("click", async () => {
       const pct = Math.round(((frame.index + 1) / frame.total) * 100);
       progressFill.style.width = pct + "%";
       setVideoStatus(
-        `Converting frame ${frame.index + 1}/${frame.total}&hellip;`,
+        t("js_converting_frame", {
+          current: frame.index + 1,
+          total: frame.total,
+        }),
       );
     }
 
-    setVideoStatus("Encoding .tglyph&hellip;");
+    setVideoStatus(t("js_encoding"));
     lastTglyphText = builder.finish(sampleFps, options.color);
 
     decodedPlayback = decodeAnimation(lastTglyphText);
     playbackFrameIndex = 0;
     renderPlaybackFrame();
 
-    videoOutputMeta.textContent = `${decodedPlayback.width}x${decodedPlayback.height} \u00b7 ${decodedPlayback.frames.length} frames \u00b7 ${(lastTglyphText.length / 1024).toFixed(1)}KB`;
+    videoOutputMeta.textContent = `${decodedPlayback.width}x${decodedPlayback.height} \u00b7 ${decodedPlayback.frames.length} ${t("js_frames_meta")} \u00b7 ${(lastTglyphText.length / 1024).toFixed(1)}KB`;
     btnDownloadTglyph.disabled = false;
     btnPlayPause.disabled = false;
-    setVideoStatus(`Done: ${lastTotal} frames converted.`);
+    setVideoStatus(t("js_done", { count: lastTotal }));
   } catch (e) {
-    setVideoStatus("Conversion failed: " + (e?.message ?? e), true);
+    setVideoStatus(t("js_conversion_failed") + (e?.message ?? e), true);
   } finally {
     updateVideoButtons();
     progressTrack.style.display = "none";
@@ -420,7 +430,7 @@ function renderPlaybackFrame() {
 
 function stopPlayback() {
   isPlaying = false;
-  btnPlayPause.textContent = "Play";
+  btnPlayPause.textContent = t("js_play");
   if (playbackTimer !== null) {
     clearTimeout(playbackTimer);
     playbackTimer = null;
@@ -441,7 +451,7 @@ btnPlayPause.addEventListener("click", () => {
     stopPlayback();
   } else {
     isPlaying = true;
-    btnPlayPause.textContent = "Pause";
+    btnPlayPause.textContent = t("js_pause");
     stepPlayback();
   }
 });
@@ -516,11 +526,11 @@ function renderGlyphCards(summary) {
     const meta = document.createElement("div");
     meta.className = "glyph-meta";
     meta.innerHTML = `
-      <div>ports: ${glyph.ports.join(", ") || "none"}</div>
-      <div>width: ${glyph.cell_width}</div>
-      <div>density: ${glyph.density.toFixed(2)}</div>
-      <div>curvature: ${glyph.curvature.toFixed(2)}</div>
-      <div>strokes: ${glyph.stroke_count}</div>
+      <div>${t("js_ports_meta")}: ${glyph.ports.join(", ") || "none"}</div>
+      <div>${t("js_width_meta")}: ${glyph.cell_width}</div>
+      <div>${t("js_density_meta")}: ${glyph.density.toFixed(2)}</div>
+      <div>${t("js_curvature_meta")}: ${glyph.curvature.toFixed(2)}</div>
+      <div>${t("js_strokes_meta")}: ${glyph.stroke_count}</div>
     `;
     card.appendChild(meta);
 
@@ -530,15 +540,15 @@ function renderGlyphCards(summary) {
 
 btnInspectAtlas.addEventListener("click", async () => {
   btnInspectAtlas.disabled = true;
-  setAtlasStatus("Building atlas&hellip;");
+  setAtlasStatus(t("js_building_atlas"));
   try {
     const atlas = await buildAtlasFromControls("atlas-");
     const summary = atlas.inspect();
     renderGlyphCards(summary);
-    atlasOutputMeta.textContent = `${summary.font_id} \u00b7 ${summary.glyphs.length} glyphs`;
-    setAtlasStatus("Ready.");
+    atlasOutputMeta.textContent = `${summary.font_id} \u00b7 ${summary.glyphs.length} ${t("js_glyphs_meta")}`;
+    setAtlasStatus(t("js_ready"));
   } catch (e) {
-    setAtlasStatus("Inspect failed: " + (e?.message ?? e), true);
+    setAtlasStatus(t("js_inspect_failed") + (e?.message ?? e), true);
   } finally {
     updateAtlasButtons();
   }

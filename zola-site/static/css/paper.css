@@ -44,6 +44,7 @@ body {
 }
 
 header.masthead {
+  position: relative;
   text-align: center;
   margin-bottom: 40px;
 }
@@ -60,6 +61,45 @@ header.masthead p.tagline {
   color: var(--ink-muted);
   font-size: 15px;
   margin: 0;
+}
+
+nav.lang-switch {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  font-family: var(--mono);
+}
+
+nav.lang-switch a,
+nav.lang-switch span {
+  padding: 3px 8px;
+  border: 1px solid var(--paper-border, rgba(0, 0, 0, 0.25));
+  border-radius: 2px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+nav.lang-switch a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+nav.lang-switch span[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper-bg);
+  border-color: var(--ink);
+}
+
+@media (max-width: 600px) {
+  nav.lang-switch {
+    position: static;
+    justify-content: center;
+    margin-top: 14px;
+  }
 }
 
 /* ---- Paper panel: the reusable "sheet" container ---- */
