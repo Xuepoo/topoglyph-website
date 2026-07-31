@@ -429,9 +429,9 @@ let playbackFrameIndex = 0;
 let decodedPlayback = null;
 let isPlaying = false;
 
-const videoDropzone = document.getElementById("video-dropzone");
-const videoFileInput = document.getElementById("video-file-input");
-const videoFilenameEl = document.getElementById("video-filename");
+const videoDropzone = document.getElementById("dropzone-video");
+const videoFileInput = document.getElementById("file-input-video");
+const videoFilenameEl = document.getElementById("filename-video");
 const videoEl = document.getElementById("video-source");
 const frameCanvas = document.getElementById("video-frame-canvas");
 const btnConvertVideo = document.getElementById("btn-convert-video");

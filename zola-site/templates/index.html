@@ -40,16 +40,21 @@
     </div>
     <input type="file" id="file-input" accept="image/*" style="display: none" />
 
+    <div class="actions-row" style="margin-bottom: 8px;">
+      <button class="btn" id="btn-render" disabled>{{ trans(key="render_btn", lang=lang) | safe }}</button>
+    </div>
+    <div class="status-line" id="status-line" style="margin-bottom: 16px;">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
+
     {% set scope = "" %} {% include "charset_controls.html" %}
 
     <div class="controls-grid" style="margin-top: 16px">
       <div class="field">
         <label for="opt-width">{{ trans(key="col_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-width" value="" min="10" max="400" placeholder="Auto" />
+        <input type="number" id="opt-width" min="10" max="400" placeholder="Auto" />
       </div>
       <div class="field">
         <label for="opt-height">{{ trans(key="row_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-height" value="" min="10" max="200" placeholder="Auto" />
+        <input type="number" id="opt-height" min="10" max="200" placeholder="Auto" />
       </div>
       <div class="field field-checkbox">
         <input type="checkbox" id="opt-invert" />
@@ -88,10 +93,6 @@
       </div>
     </div>
 
-    <div class="actions-row">
-      <button class="btn" id="btn-render" disabled>{{ trans(key="render_btn", lang=lang) | safe }}</button>
-    </div>
-    <div class="status-line" id="status-line">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
   </div>
 
   <!-- ==================== VIDEO MODE ==================== -->
@@ -102,16 +103,25 @@
     </div>
     <input type="file" id="file-input-video" accept="video/*" style="display: none" />
 
+    <div class="actions-row" style="margin-bottom: 8px;">
+      <button class="btn" id="btn-video-convert" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
+      <a id="download-link" style="display: none"></a>
+    </div>
+    <div class="status-line" id="status-line-video"></div>
+    <div class="progress-track" style="margin-bottom: 16px;">
+      <div class="progress-fill" id="progress-video" style="width: 0%"></div>
+    </div>
+
     {% set scope = "video-" %} {% include "charset_controls.html" %}
 
     <div class="controls-grid" style="margin-top: 16px">
       <div class="field">
         <label for="opt-video-width">{{ trans(key="col_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-video-width" value="120" min="10" max="400" />
+        <input type="number" id="opt-video-width" min="10" max="400" placeholder="Auto" />
       </div>
       <div class="field">
         <label for="opt-video-height">{{ trans(key="row_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-video-height" value="60" min="10" max="200" />
+        <input type="number" id="opt-video-height" min="10" max="200" placeholder="Auto" />
       </div>
       <div class="field field-checkbox">
         <input type="checkbox" id="opt-video-color" />
@@ -126,14 +136,6 @@
       </div>
     </div>
 
-    <div class="actions-row">
-      <button class="btn" id="btn-video-convert" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
-      <a id="download-link" style="display: none"></a>
-    </div>
-    <div class="status-line" id="status-line-video"></div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-video" style="width: 0%"></div>
-    </div>
   </div>
 
   <!-- ==================== ATLAS PREVIEW MODE ==================== -->
