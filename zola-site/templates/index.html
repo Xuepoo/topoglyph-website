@@ -1,0 +1,254 @@
+{% extends "base.html" %} {% block content %}
+<section class="paper">
+  <div class="tabs">
+    <button type="button" class="tab-btn is-active" data-tab="image">
+      Image
+    </button>
+    <button type="button" class="tab-btn" data-tab="video">Video / GIF</button>
+    <button type="button" class="tab-btn" data-tab="atlas">Glyph Atlas</button>
+  </div>
+</section>
+
+<!-- ==================== IMAGE MODE ==================== -->
+<section class="paper tab-panel" data-tab-panel="image">
+  <h2>Input</h2>
+
+  <div class="dropzone" id="dropzone">
+    <p>Drop an image here, or click to choose a file</p>
+    <p class="filename" id="filename"></p>
+  </div>
+  <input
+    type="file"
+    id="file-input"
+    accept="image/png,image/jpeg,image/webp,image/gif,image/bmp"
+    hidden
+  />
+
+  {% set scope = "" %} {% include "charset_controls.html" %}
+
+  <div class="controls-grid" style="margin-top: 16px">
+    <div class="field">
+      <label for="opt-width">Columns</label>
+      <input type="number" id="opt-width" value="120" min="10" max="400" />
+    </div>
+    <div class="field">
+      <label for="opt-height">Rows</label>
+      <input type="number" id="opt-height" value="60" min="10" max="200" />
+    </div>
+    <div class="field">
+      <label for="opt-preset">Match Preset</label>
+      <select id="opt-preset">
+        <option value="line-art" selected>Line Art</option>
+        <option value="han-emoji">Han / Emoji</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="opt-tolerance"
+        >RDP Tolerance
+        <span class="range-value" id="opt-tolerance-value">0.5</span></label
+      >
+      <input
+        type="range"
+        id="opt-tolerance"
+        min="0"
+        max="3"
+        step="0.1"
+        value="0.5"
+      />
+    </div>
+    <div class="field">
+      <label for="opt-chaikin"
+        >Chaikin Iterations
+        <span class="range-value" id="opt-chaikin-value">1</span></label
+      >
+      <input type="range" id="opt-chaikin" min="0" max="4" step="1" value="1" />
+    </div>
+    <div class="field">
+      <label for="opt-top-k"
+        >Top-K Pool
+        <span class="range-value" id="opt-top-k-value">8</span></label
+      >
+      <input type="range" id="opt-top-k" min="1" max="24" step="1" value="8" />
+    </div>
+    <div class="field">
+      <label for="opt-relaxation"
+        >Relaxation Rounds
+        <span class="range-value" id="opt-relaxation-value">3</span></label
+      >
+      <input
+        type="range"
+        id="opt-relaxation"
+        min="0"
+        max="6"
+        step="1"
+        value="3"
+      />
+    </div>
+    <div class="field field-checkbox">
+      <input type="checkbox" id="opt-invert" />
+      <label for="opt-invert">Invert colors</label>
+    </div>
+    <div class="field field-checkbox">
+      <input type="checkbox" id="opt-color" />
+      <label for="opt-color">Sample path colors</label>
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button type="button" class="btn" id="btn-render" disabled>Render</button>
+    <button type="button" class="btn is-secondary" id="btn-copy" disabled>
+      Copy Text
+    </button>
+    <button type="button" class="btn is-secondary" id="btn-download" disabled>
+      Download .txt
+    </button>
+  </div>
+  <div class="status-line" id="status-line">
+    Loading WebAssembly engine&hellip;
+  </div>
+</section>
+
+<section class="paper output-panel tab-panel" data-tab-panel="image">
+  <div class="output-header">
+    <h2>Output</h2>
+    <span class="status-line" id="output-meta"></span>
+  </div>
+  <div class="output-scroll">
+    <pre class="empty-state" id="output-pre">
+Choose an image above, then click Render.</pre>
+  </div>
+</section>
+
+<!-- ==================== VIDEO MODE ==================== -->
+<section class="paper tab-panel is-hidden" data-tab-panel="video">
+  <h2>Input</h2>
+  <p style="color: var(--ink-muted); font-size: 13px; margin-top: 0">
+    Every frame is decoded in your browser (no server, no FFmpeg — video/GIF
+    decoding uses the native <code>&lt;video&gt;</code>/<code
+      >&lt;canvas&gt;</code
+    >
+    element) and matched against the glyph atlas, then assembled into a
+    <code>.tglyph</code> text animation you can play back below or download.
+  </p>
+
+  <div class="dropzone" id="video-dropzone">
+    <p>Drop a video or animated GIF here, or click to choose a file</p>
+    <p class="filename" id="video-filename"></p>
+  </div>
+  <input type="file" id="video-file-input" accept="video/*,image/gif" hidden />
+  <video id="video-source" style="display: none" muted playsinline></video>
+  <canvas id="video-frame-canvas" style="display: none"></canvas>
+
+  {% set scope = "video-" %} {% include "charset_controls.html" %}
+
+  <div class="controls-grid" style="margin-top: 16px">
+    <div class="field">
+      <label for="video-opt-width">Columns</label>
+      <input type="number" id="video-opt-width" value="80" min="10" max="240" />
+    </div>
+    <div class="field">
+      <label for="video-opt-height">Rows</label>
+      <input
+        type="number"
+        id="video-opt-height"
+        value="40"
+        min="10"
+        max="120"
+      />
+    </div>
+    <div class="field">
+      <label for="video-opt-preset">Match Preset</label>
+      <select id="video-opt-preset">
+        <option value="line-art" selected>Line Art</option>
+        <option value="han-emoji">Han / Emoji</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="video-opt-fps"
+        >Sample FPS
+        <span class="range-value" id="video-opt-fps-value">10</span></label
+      >
+      <input
+        type="range"
+        id="video-opt-fps"
+        min="1"
+        max="30"
+        step="1"
+        value="10"
+      />
+    </div>
+    <div class="field field-checkbox">
+      <input type="checkbox" id="video-opt-color" />
+      <label for="video-opt-color">Record path colors (larger file)</label>
+    </div>
+  </div>
+
+  <div class="actions-row">
+    <button type="button" class="btn" id="btn-convert-video" disabled>
+      Convert
+    </button>
+    <button
+      type="button"
+      class="btn is-secondary"
+      id="btn-download-tglyph"
+      disabled
+    >
+      Download .tglyph
+    </button>
+  </div>
+  <div class="status-line" id="video-status-line">
+    Loading WebAssembly engine&hellip;
+  </div>
+  <div class="progress-track" id="video-progress-track" style="display: none">
+    <div class="progress-fill" id="video-progress-fill"></div>
+  </div>
+</section>
+
+<section class="paper output-panel tab-panel is-hidden" data-tab-panel="video">
+  <div class="output-header">
+    <h2>Playback</h2>
+    <span class="status-line" id="video-output-meta"></span>
+  </div>
+  <div class="output-scroll">
+    <pre class="empty-state" id="video-output-pre">
+Convert a video above to preview playback here.</pre>
+  </div>
+  <div class="actions-row" style="padding: 0 20px 16px">
+    <button type="button" class="btn is-secondary" id="btn-play-pause" disabled>
+      Play
+    </button>
+  </div>
+</section>
+
+<!-- ==================== ATLAS PREVIEW MODE ==================== -->
+<section class="paper tab-panel is-hidden" data-tab-panel="atlas">
+  <h2>Glyph Atlas Preview</h2>
+  <p style="color: var(--ink-muted); font-size: 13px; margin-top: 0">
+    Inspects the currently configured glyph atlas: every candidate token, its
+    16&times;32 stroke mask, boundary ports, and matching features — the same
+    data <code>topoglyph-cli atlas inspect</code> prints, rendered as a grid.
+  </p>
+
+  {% set scope = "atlas-" %} {% include "charset_controls.html" %}
+
+  <div class="actions-row">
+    <button type="button" class="btn" id="btn-inspect-atlas" disabled>
+      Inspect
+    </button>
+  </div>
+  <div class="status-line" id="atlas-status-line">
+    Loading WebAssembly engine&hellip;
+  </div>
+</section>
+
+<section class="paper tab-panel is-hidden" data-tab-panel="atlas">
+  <div class="output-header">
+    <h2>Glyphs</h2>
+    <span class="status-line" id="atlas-output-meta"></span>
+  </div>
+  <div class="glyph-grid" id="glyph-grid"></div>
+</section>
+
+{% endblock content %} {% block extra_body %}
+<script type="module" src="/js/app.js"></script>
+{% endblock extra_body %}

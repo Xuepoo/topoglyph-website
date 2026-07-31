@@ -1,0 +1,441 @@
+/* TopoGlyph — a light, self-authored "paper" aesthetic instead of pulling in
+ * a full CSS framework (papercss/paper.css are either a whole component
+ * system or tuned for print-preview layout, not a single output-display
+ * widget — see topoglyph-website's design notes). Core ideas borrowed from
+ * those projects: a monospace-first "receipt paper" panel with a soft
+ * shadow and a torn/perforated edge, kept intentionally simple.
+ */
+
+:root {
+  --paper-bg: #fdfbf7;
+  --paper-edge: #e8e3d8;
+  --ink: #1b1b18;
+  --ink-muted: #6b6b63;
+  --accent: #b0413e;
+  --shadow: 0 2px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --mono:
+    "IBM Plex Mono", "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  --serif: "IBM Plex Serif", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #ece7dc;
+  background-image: radial-gradient(circle at 50% 0%, #f4f0e6 0%, #ece7dc 60%);
+  color: var(--ink);
+  font-family: var(--serif);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 48px 20px 80px;
+}
+
+header.masthead {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+header.masthead h1 {
+  font-family: var(--mono);
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+header.masthead p.tagline {
+  color: var(--ink-muted);
+  font-size: 15px;
+  margin: 0;
+}
+
+/* ---- Paper panel: the reusable "sheet" container ---- */
+.paper {
+  position: relative;
+  background: var(--paper-bg);
+  box-shadow: var(--shadow);
+  border-radius: 2px;
+  padding: 28px 28px 24px;
+  margin-bottom: 28px;
+}
+
+/* Perforated top/bottom edge, evoking continuous printer paper. Rendered as
+ * a repeating radial-gradient "row of holes" rather than an image asset, so
+ * it scales with any panel width and needs no extra request. */
+.paper::before,
+.paper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background-image: radial-gradient(
+    circle,
+    var(--paper-edge) 3px,
+    transparent 3.5px
+  );
+  background-size: 20px 10px;
+  background-repeat: repeat-x;
+  background-position: 6px center;
+}
+
+.paper::before {
+  top: -5px;
+}
+
+.paper::after {
+  bottom: -5px;
+}
+
+.paper h2 {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin: 0 0 16px;
+  border-bottom: 1px dashed var(--paper-edge);
+  padding-bottom: 10px;
+}
+
+/* ---- The text-art output itself: real, selectable <pre> text ---- */
+.output-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.output-panel .output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px dashed var(--paper-edge);
+}
+
+.output-panel .output-header h2 {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.output-scroll {
+  overflow: auto;
+  max-height: 70vh;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 1.4em,
+    rgba(0, 0, 0, 0.015) 1.4em,
+    rgba(0, 0, 0, 0.015) 1.42em
+  );
+}
+
+.output-scroll pre {
+  margin: 0;
+  padding: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: pre;
+  color: var(--ink);
+  tab-size: 1;
+}
+
+.output-scroll pre.empty-state {
+  color: var(--ink-muted);
+  font-family: var(--serif);
+  font-size: 14px;
+  padding: 60px 20px;
+  text-align: center;
+  white-space: normal;
+}
+
+/* ---- Controls ---- */
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  /* Slider labels ("RELAXATION ROUNDS 3") wrap onto a second line more
+   * often than short ones ("ROWS") in the same auto-fit grid row; a fixed
+   * min-height keeps every row's inputs starting at the same y-position
+   * instead of the shorter labels' rows looking misaligned next to the
+   * longer, wrapped ones. Stays a block (not flex) so the label text and
+   * its value span keep the natural inline-with-wrapping layout the
+   * template's whitespace already produces.
+   */
+  display: block;
+  min-height: 2.6em;
+}
+
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--paper-edge);
+  border-radius: 2px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.field input[type="range"] {
+  width: 100%;
+}
+
+.field .range-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.field-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-checkbox label {
+  text-transform: none;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.dropzone {
+  border: 2px dashed var(--paper-edge);
+  border-radius: 4px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.dropzone:hover,
+.dropzone.is-dragover {
+  border-color: var(--accent);
+  background: rgba(176, 65, 62, 0.04);
+}
+
+.dropzone p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+.dropzone .filename {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  margin-top: 8px;
+}
+
+.btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper-bg);
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.btn:hover:not(:disabled) {
+  box-shadow: 0 2px 0 var(--ink);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.is-secondary {
+  background: transparent;
+  color: var(--ink);
+}
+
+.actions-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.status-line {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 12px;
+  min-height: 1.4em;
+}
+
+.status-line.is-error {
+  color: var(--accent);
+}
+
+/* ---- Tabs ---- */
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--paper-edge);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.tab-btn.is-active {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: rgba(27, 27, 24, 0.04);
+}
+
+.tab-panel.is-hidden {
+  display: none;
+}
+
+/* ---- Progress bar (video conversion) ---- */
+.progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--paper-edge);
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.15s ease;
+}
+
+/* ---- Glyph atlas preview grid ---- */
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 20px;
+}
+
+.glyph-card {
+  border: 1px solid var(--paper-edge);
+  border-radius: 3px;
+  padding: 12px;
+  text-align: center;
+  background: #fff;
+}
+
+.glyph-card .glyph-token {
+  font-family: var(--mono);
+  font-size: 22px;
+  margin-bottom: 6px;
+  min-height: 1.4em;
+}
+
+.glyph-card .glyph-mask {
+  display: block;
+  margin: 0 auto 8px;
+  border: 1px solid var(--paper-edge);
+}
+
+.glyph-card .glyph-meta {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-muted);
+  text-align: left;
+  line-height: 1.5;
+}
+
+footer.site-footer {
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 12px;
+  margin-top: 40px;
+}
+
+footer.site-footer a {
+  color: var(--ink-muted);
+}
+
+a {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 32px 14px 60px;
+  }
+  header.masthead h1 {
+    font-size: 20px;
+  }
+  .output-scroll pre {
+    font-size: 8px;
+  }
+  /* Action buttons (Render/Copy/Download, Convert/Download .tglyph) wrap to
+   * their own full-width row below this breakpoint instead of shrinking or
+   * spilling past the paper panel's padding, since a stacked layout reads
+   * better than several half-width buttons once labels like
+   * "Download .tglyph" no longer fit on one line next to their siblings. */
+  .actions-row {
+    flex-direction: column;
+  }
+  .actions-row .btn {
+    width: 100%;
+  }
+  .tabs {
+    flex-direction: column;
+  }
+  .tab-btn {
+    width: 100%;
+  }
+}

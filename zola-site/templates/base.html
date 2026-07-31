@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}TopoGlyph — Topology-to-Glyph Text Art{% endblock title
+      %}
+    </title>
+
+    <link rel="preload" href="/css/paper.css" as="style" />
+
+    <meta
+      name="description"
+      content="Convert any image into topology-matched text art in your browser. TopoGlyph analyzes stroke geometry and matches it against a glyph atlas — no server, all WebAssembly."
+    />
+    <meta
+      name="keywords"
+      content="text art generator, ASCII art, ANSI art, topology glyph matching, image to text art, WebAssembly, Rust, TopoGlyph"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ config.base_url }}/" />
+    <meta
+      property="og:title"
+      content="TopoGlyph — Topology-to-Glyph Text Art"
+    />
+    <meta
+      property="og:description"
+      content="Convert any image into topology-matched text art in your browser, entirely client-side via WebAssembly."
+    />
+
+    <link href="/css/paper.css" rel="stylesheet" />
+    {% block extra_head %}{% endblock extra_head %}
+  </head>
+  <body>
+    <div class="container">
+      <header class="masthead">
+        <h1>TopoGlyph</h1>
+        <p class="tagline">
+          topology-matched text art, rendered entirely in your browser
+        </p>
+      </header>
+
+      {% block content %}{% endblock content %}
+
+      <footer class="site-footer">
+        <p>
+          <a
+            href="https://github.com/Xuepoo/topoglyph"
+            target="_blank"
+            rel="noopener"
+            >Source</a
+          >
+          &middot;
+          <a
+            href="https://crates.io/crates/topoglyph-cli"
+            target="_blank"
+            rel="noopener"
+            >crates.io</a
+          >
+          &middot; MIT Licensed
+        </p>
+      </footer>
+    </div>
+    {% block extra_body %}{% endblock extra_body %}
+  </body>
+</html>

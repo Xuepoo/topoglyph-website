@@ -1,0 +1,44 @@
+{% set prefix = scope %}
+<div class="controls-grid" style="margin-top: 16px">
+  <div class="field">
+    <label for="{{ prefix }}opt-charset">Charset</label>
+    <select
+      id="{{ prefix }}opt-charset"
+      class="charset-select"
+      data-scope="{{ prefix }}"
+    >
+      <option value="lines" selected>Lines (built-in atlas)</option>
+      <option value="ascii">ASCII</option>
+      <option value="blocks">Blocks</option>
+      <option value="braille">Braille</option>
+      <option value="custom">Custom (needs a font)</option>
+    </select>
+  </div>
+  <div
+    class="field custom-chars-field"
+    data-scope="{{ prefix }}"
+    style="display: none"
+  >
+    <label for="{{ prefix }}opt-custom-chars">Custom Characters</label>
+    <input
+      type="text"
+      id="{{ prefix }}opt-custom-chars"
+      placeholder="e.g. 水火木金土 or repeat chars to weight them"
+    />
+  </div>
+  <div class="field font-field" data-scope="{{ prefix }}" style="display: none">
+    <label for="{{ prefix }}opt-font">Font File (TTF/OTF)</label>
+    <input type="file" id="{{ prefix }}opt-font" accept=".ttf,.otf" />
+  </div>
+  <div
+    class="field glyph-mode-field"
+    data-scope="{{ prefix }}"
+    style="display: none"
+  >
+    <label for="{{ prefix }}opt-glyph-mode">Glyph Mode</label>
+    <select id="{{ prefix }}opt-glyph-mode">
+      <option value="set" selected>Set (equal weight)</option>
+      <option value="weighted">Weighted (by frequency)</option>
+    </select>
+  </div>
+</div>

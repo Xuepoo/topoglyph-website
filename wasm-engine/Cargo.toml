@@ -1,0 +1,39 @@
+[package]
+name = "topoglyph-wasm-engine"
+version = "0.1.0"
+edition = "2021"
+description = "WebAssembly bridge for TopoGlyph"
+license = "MIT"
+repository = "https://github.com/Xuepoo/topoglyph-website"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+console_error_panic_hook = { version = "0.1", optional = true }
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+
+# Pinned to the published crates.io releases, matching how topoglyph's own
+# Cargo.toml pins vectomancy-* (see that repo's Cargo.toml comment): a
+# `path = "../../topoglyph/..."` dependency would only ever build on a
+# machine with a sibling `../topoglyph` checkout, which breaks Docker/CI/
+# any other contributor's clone the same way it did for topoglyph itself
+# before that was fixed.
+topoglyph-core = "0.1.0"
+topoglyph-atlas = "0.1.0"
+topoglyph-output = "0.1.0"
+topoglyph-vectomancy = "0.1.0"
+
+getrandom = { version = "0.2", features = ["js"] }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[profile.release]
+opt-level = "z"       # Optimize for size
+lto = true            # Enable Link Time Optimization
+codegen-units = 1     # Reduce parallel code generation units for better optimization
+panic = "abort"       # Remove panic unwinding
