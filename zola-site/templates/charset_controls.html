@@ -7,11 +7,11 @@
       class="charset-select"
       data-scope="{{ prefix }}"
     >
-      <option value="lines" selected>Lines (built-in atlas)</option>
-      <option value="ascii">ASCII</option>
-      <option value="blocks">Blocks</option>
-      <option value="braille">Braille</option>
-      <option value="custom">Custom (needs a font)</option>
+      <option value="lines" selected>Lines (built-in, no font needed)</option>
+      <option value="ascii">ASCII (needs a font)</option>
+      <option value="blocks">Blocks (needs a font)</option>
+      <option value="braille">Braille (needs a font)</option>
+      <option value="custom">Custom characters (needs a font)</option>
     </select>
   </div>
   <div
@@ -27,8 +27,19 @@
     />
   </div>
   <div class="field font-field" data-scope="{{ prefix }}" style="display: none">
-    <label for="{{ prefix }}opt-font">Font File (TTF/OTF)</label>
+    <label for="{{ prefix }}opt-font"
+      >Font File (TTF/OTF) &mdash; <strong>required</strong> for this
+      charset</label
+    >
     <input type="file" id="{{ prefix }}opt-font" accept=".ttf,.otf" />
+    <p class="field-hint">
+      Every character in this charset is rasterized from the font you upload
+      here (there is no built-in font). Any system TTF/OTF works &mdash; e.g. on
+      Windows try
+      <code>C:\Windows\Fonts\consola.ttf</code>, on macOS
+      <code>/System/Library/Fonts/Menlo.ttc</code>, on Linux
+      <code>/usr/share/fonts/**/*.ttf</code>.
+    </p>
   </div>
   <div
     class="field glyph-mode-field"

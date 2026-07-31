@@ -106,12 +106,33 @@ async function buildAtlasFromControls(prefix) {
   const fontInput = document.getElementById(`${prefix}opt-font`);
   const fontFile = fontInput?.files?.[0];
   if (!fontFile) {
+    // Every charset besides "Lines" rasterizes its characters from an
+    // uploaded font (there is no built-in font for ASCII/Blocks/Braille/
+    // Custom) -- see charset_controls.html's "Font File" field, which
+    // only appears once a non-"lines" charset is selected. This is the
+    // most common first-time mistake, so spell out the fix rather than
+    // just naming the missing precondition.
     throw new Error(
-      "A font file is required for any charset other than 'Lines'.",
+      `The "${charsetLabel(charset)}" charset needs a font file. Scroll up to "Font File (TTF/OTF)" and choose one (any system font works), then try again.`,
     );
   }
   const fontBytes = new Uint8Array(await fontFile.arrayBuffer());
   return AtlasHandle.fromFont(charset, customChars, fontBytes);
+}
+
+function charsetLabel(charset) {
+  switch (charset) {
+    case "ascii":
+      return "ASCII";
+    case "blocks":
+      return "Blocks";
+    case "braille":
+      return "Braille";
+    case "custom":
+      return "Custom characters";
+    default:
+      return charset;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +257,7 @@ btnRender.addEventListener("click", async () => {
     btnDownload.disabled = false;
     setImageStatus("Ready.");
   } catch (e) {
-    setImageStatus("Render failed: " + e, true);
+    setImageStatus("Render failed: " + (e?.message ?? e), true);
   } finally {
     updateImageButtons();
   }
@@ -247,7 +268,7 @@ btnCopy.addEventListener("click", async () => {
     await navigator.clipboard.writeText(outputPre.textContent);
     setImageStatus("Copied to clipboard.");
   } catch (e) {
-    setImageStatus("Could not copy: " + e, true);
+    setImageStatus("Could not copy: " + (e?.message ?? e), true);
   }
 });
 
@@ -384,7 +405,7 @@ btnConvertVideo.addEventListener("click", async () => {
     btnPlayPause.disabled = false;
     setVideoStatus(`Done: ${lastTotal} frames converted.`);
   } catch (e) {
-    setVideoStatus("Conversion failed: " + e, true);
+    setVideoStatus("Conversion failed: " + (e?.message ?? e), true);
   } finally {
     updateVideoButtons();
     progressTrack.style.display = "none";
@@ -517,7 +538,7 @@ btnInspectAtlas.addEventListener("click", async () => {
     atlasOutputMeta.textContent = `${summary.font_id} \u00b7 ${summary.glyphs.length} glyphs`;
     setAtlasStatus("Ready.");
   } catch (e) {
-    setAtlasStatus("Inspect failed: " + e, true);
+    setAtlasStatus("Inspect failed: " + (e?.message ?? e), true);
   } finally {
     updateAtlasButtons();
   }

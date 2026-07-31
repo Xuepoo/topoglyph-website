@@ -9,6 +9,78 @@
   </div>
 </section>
 
+<section class="paper usage-panel">
+  <details>
+    <summary>How to use this &mdash; read this first</summary>
+    <div class="usage-body">
+      <h3>Image</h3>
+      <ol>
+        <li>Drop or choose an image.</li>
+        <li>
+          Leave <strong>Charset</strong> on <strong>Lines</strong> the first
+          time &mdash; it's the only option that works without uploading
+          anything.
+          <strong
+            >ASCII / Blocks / Braille / Custom all rasterize their characters
+            from a font you provide</strong
+          >, so picking one of those without also choosing a "Font File
+          (TTF/OTF)" below it is the most common reason
+          <code>Render</code> fails with "needs a font file". Any TTF/OTF on
+          your system works.
+        </li>
+        <li>
+          Click <strong>Render</strong>. Adjust Columns/Rows/Tolerance/Chaikin
+          and re-render to taste.
+        </li>
+        <li>
+          <strong>Copy Text</strong> copies the raw characters (works with any
+          charset); <strong>Download .txt</strong> saves it to a file.
+        </li>
+      </ol>
+      <h3>Video / GIF</h3>
+      <ol>
+        <li>
+          Drop a video or animated GIF. Everything happens in your browser
+          &mdash; there is no server and no FFmpeg; frames are grabbed via the
+          browser's native <code>&lt;video&gt;</code>/<code
+            >&lt;canvas&gt;</code
+          >
+          element, so exotic codecs your browser can't already play won't decode
+          here either.
+        </li>
+        <li>
+          Same charset rule as Image applies: non-"Lines" charsets need a font
+          file.
+        </li>
+        <li>
+          <strong>Sample FPS</strong> controls how many frames per second of the
+          source are converted &mdash; higher values take longer and produce a
+          larger <code>.tglyph</code> file.
+        </li>
+        <li>
+          Click <strong>Convert</strong>, then <strong>Play</strong> to preview
+          the result in the Playback panel, or
+          <strong>Download .tglyph</strong> to save the animation as a plain
+          text file (see the
+          <a
+            href="https://github.com/Xuepoo/topoglyph/blob/main/CHANGELOG.md"
+            target="_blank"
+            rel="noopener"
+            >.tglyph format</a
+          >).
+        </li>
+      </ol>
+      <h3>Glyph Atlas</h3>
+      <p>
+        Pick a charset (same font requirement applies) and click
+        <strong>Inspect</strong> to see every candidate glyph's stroke mask,
+        boundary ports, and matching features &mdash; useful for understanding
+        <em>why</em> a render chose the characters it did.
+      </p>
+    </div>
+  </details>
+</section>
+
 <!-- ==================== IMAGE MODE ==================== -->
 <section class="paper tab-panel" data-tab-panel="image">
   <h2>Input</h2>
