@@ -35,7 +35,7 @@
   <!-- ==================== IMAGE MODE ==================== -->
   <div class="tab-panel" data-tab-panel="image">
     <div class="dropzone" id="dropzone">
-      <p>{{ trans(key="drop_prompt", lang=lang) | safe }}</p>
+      <p>{{ trans(key="drop_image", lang=lang) | safe }}</p>
       <div class="filename" id="filename"></div>
     </div>
     <input type="file" id="file-input" accept="image/*" style="display: none" />
@@ -61,7 +61,6 @@
           <option value="line-art">{{ trans(key="preset_line_art", lang=lang) | safe }}</option>
           <option value="han-emoji">{{ trans(key="preset_han_emoji", lang=lang) | safe }}</option>
         </select>
-        <div class="field-hint">{{ trans(key="preset_hint", lang=lang) | safe }}</div>
       </div>
       <div class="field">
         <label for="opt-tolerance"
@@ -77,20 +76,20 @@
       </div>
       <div class="field">
         <label for="opt-topk"
-          >{{ trans(key="topk_label", lang=lang) | safe }} <span class="range-value" id="val-topk">8</span></label
+          >{{ trans(key="top_k_label", lang=lang) | safe }} <span class="range-value" id="val-topk">8</span></label
         >
         <input type="range" id="opt-topk" min="1" max="16" step="1" value="8" />
       </div>
       <div class="field">
         <label for="opt-relaxation"
-          >{{ trans(key="relax_label", lang=lang) | safe }} <span class="range-value" id="val-relaxation">3</span></label
+          >{{ trans(key="relaxation_label", lang=lang) | safe }} <span class="range-value" id="val-relaxation">3</span></label
         >
         <input type="range" id="opt-relaxation" min="0" max="5" step="1" value="3" />
       </div>
     </div>
 
     <div class="actions-row">
-      <button class="btn" id="btn-render" disabled>{{ trans(key="btn_render", lang=lang) | safe }}</button>
+      <button class="btn" id="btn-render" disabled>{{ trans(key="render_btn", lang=lang) | safe }}</button>
     </div>
     <div class="status-line" id="status-line">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
   </div>
@@ -98,7 +97,7 @@
   <!-- ==================== VIDEO MODE ==================== -->
   <div class="tab-panel is-hidden" data-tab-panel="video">
     <div class="dropzone" id="dropzone-video">
-      <p>{{ trans(key="drop_prompt_video", lang=lang) | safe }}</p>
+      <p>{{ trans(key="drop_video", lang=lang) | safe }}</p>
       <div class="filename" id="filename-video"></div>
     </div>
     <input type="file" id="file-input-video" accept="video/*" style="display: none" />
@@ -128,7 +127,7 @@
     </div>
 
     <div class="actions-row">
-      <button class="btn" id="btn-video-convert" disabled>{{ trans(key="btn_convert_tglyph", lang=lang) | safe }}</button>
+      <button class="btn" id="btn-video-convert" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
       <a id="download-link" style="display: none"></a>
     </div>
     <div class="status-line" id="status-line-video"></div>
@@ -141,7 +140,7 @@
   <div class="tab-panel is-hidden" data-tab-panel="atlas">
     {% set scope = "atlas-" %} {% include "charset_controls.html" %}
     <div class="actions-row" style="margin-top: 16px">
-      <button class="btn" id="btn-atlas-inspect">{{ trans(key="btn_inspect", lang=lang) | safe }}</button>
+      <button class="btn" id="btn-atlas-inspect">{{ trans(key="inspect_btn", lang=lang) | safe }}</button>
     </div>
     <div class="status-line" id="status-line-atlas"></div>
   </div>
@@ -160,13 +159,13 @@
   </div>
 </div>
 <div class="editor-content tab-panel" data-tab-panel="image">
-  <pre id="output-pre" class="empty-state">{{ trans(key="empty_state", lang=lang) | safe }}</pre>
+  <pre id="output-pre" class="empty-state">{{ trans(key="empty_output", lang=lang) | safe }}</pre>
 </div>
   <div class="output-header">
 
 
 <div class="editor-content tab-panel is-hidden" data-tab-panel="video">
-  <pre class="empty-state">{{ trans(key="video_empty_state", lang=lang) | safe }}</pre>
+  <pre class="empty-state">{{ trans(key="empty_playback", lang=lang) | safe }}</pre>
 </div>
 
 
