@@ -1,17 +1,17 @@
 {% set prefix = scope %}
 <div class="controls-grid" style="margin-top: 16px">
   <div class="field">
-    <label for="{{ prefix }}opt-charset">Charset</label>
+    <label for="{{ prefix }}opt-charset">{{ trans(key="charset_label", lang=lang) | safe }}</label>
     <select
       id="{{ prefix }}opt-charset"
       class="charset-select"
       data-scope="{{ prefix }}"
     >
-      <option value="lines" selected>Lines (built-in, no font needed)</option>
-      <option value="ascii">ASCII (needs a font)</option>
-      <option value="blocks">Blocks (needs a font)</option>
-      <option value="braille">Braille (needs a font)</option>
-      <option value="custom">Custom characters (needs a font)</option>
+      <option value="lines" selected>{{ trans(key="charset_lines", lang=lang) | safe }}</option>
+      <option value="ascii">{{ trans(key="charset_ascii", lang=lang) | safe }}</option>
+      <option value="blocks">{{ trans(key="charset_blocks", lang=lang) | safe }}</option>
+      <option value="braille">{{ trans(key="charset_braille", lang=lang) | safe }}</option>
+      <option value="custom">{{ trans(key="charset_custom", lang=lang) | safe }}</option>
     </select>
   </div>
   <div
@@ -19,37 +19,33 @@
     data-scope="{{ prefix }}"
     style="display: none"
   >
-    <label for="{{ prefix }}opt-custom-chars">Custom Characters</label>
+    <label for="{{ prefix }}opt-custom-chars"
+      >{{ trans(key="custom_chars_label", lang=lang) | safe }}</label
+    >
     <input
       type="text"
       id="{{ prefix }}opt-custom-chars"
-      placeholder="e.g. 水火木金土 or repeat chars to weight them"
+      placeholder="{{ trans(key="custom_chars_placeholder", lang=lang) | safe }}"
     />
   </div>
   <div class="field font-field" data-scope="{{ prefix }}" style="display: none">
     <label for="{{ prefix }}opt-font"
-      >Font File (TTF/OTF) &mdash; <strong>required</strong> for this
-      charset</label
+      >{{ trans(key="font_label", lang=lang) | safe }}</label
     >
     <input type="file" id="{{ prefix }}opt-font" accept=".ttf,.otf" />
-    <p class="field-hint">
-      Every character in this charset is rasterized from the font you upload
-      here (there is no built-in font). Any system TTF/OTF works &mdash; e.g. on
-      Windows try
-      <code>C:\Windows\Fonts\consola.ttf</code>, on macOS
-      <code>/System/Library/Fonts/Menlo.ttc</code>, on Linux
-      <code>/usr/share/fonts/**/*.ttf</code>.
-    </p>
+    <p class="field-hint">{{ trans(key="font_hint", lang=lang) | safe }}</p>
   </div>
   <div
     class="field glyph-mode-field"
     data-scope="{{ prefix }}"
     style="display: none"
   >
-    <label for="{{ prefix }}opt-glyph-mode">Glyph Mode</label>
+    <label for="{{ prefix }}opt-glyph-mode"
+      >{{ trans(key="glyph_mode_label", lang=lang) | safe }}</label
+    >
     <select id="{{ prefix }}opt-glyph-mode">
-      <option value="set" selected>Set (equal weight)</option>
-      <option value="weighted">Weighted (by frequency)</option>
+      <option value="set" selected>{{ trans(key="glyph_mode_set", lang=lang) | safe }}</option>
+      <option value="weighted">{{ trans(key="glyph_mode_weighted", lang=lang) | safe }}</option>
     </select>
   </div>
 </div>

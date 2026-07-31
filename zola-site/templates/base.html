@@ -1,34 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% block title %}TopoGlyph — Topology-to-Glyph Text Art{% endblock title
-      %}
-    </title>
+    <title>{{ trans(key="site_title", lang=lang) | safe }}</title>
 
     <link rel="preload" href="/css/paper.css" as="style" />
 
-    <meta
-      name="description"
-      content="Convert any image into topology-matched text art in your browser. TopoGlyph analyzes stroke geometry and matches it against a glyph atlas — no server, all WebAssembly."
-    />
-    <meta
-      name="keywords"
-      content="text art generator, ASCII art, ANSI art, topology glyph matching, image to text art, WebAssembly, Rust, TopoGlyph"
-    />
+    <meta name="description" content="{{ trans(key="site_description", lang=lang) | safe }}" />
+    <meta name="keywords" content="{{ trans(key="site_keywords", lang=lang) | safe }}" />
+
+    {% if lang == "zh" %}
+      <link rel="alternate" hreflang="en" href="/" />
+    {% else %}
+      <link rel="alternate" hreflang="zh" href="/zh/" />
+    {% endif %}
+    <link rel="alternate" hreflang="x-default" href="/" />
 
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="{{ config.base_url }}/" />
-    <meta
-      property="og:title"
-      content="TopoGlyph — Topology-to-Glyph Text Art"
-    />
-    <meta
-      property="og:description"
-      content="Convert any image into topology-matched text art in your browser, entirely client-side via WebAssembly."
-    />
+    <meta property="og:url" content="{{ current_url }}" />
+    <meta property="og:title" content="{{ trans(key="site_title", lang=lang) | safe }}" />
+    <meta property="og:description" content="{{ trans(key="og_description", lang=lang) | safe }}" />
 
     <link href="/css/paper.css" rel="stylesheet" />
     {% block extra_head %}{% endblock extra_head %}
@@ -36,10 +28,21 @@
   <body>
     <div class="container">
       <header class="masthead">
-        <h1>TopoGlyph</h1>
-        <p class="tagline">
-          topology-matched text art, rendered entirely in your browser
-        </p>
+        <div class="masthead-row">
+          <div class="masthead-brand">
+            <h1>TopoGlyph</h1>
+            <p class="tagline">{{ trans(key="tagline", lang=lang) | safe }}</p>
+          </div>
+          <nav class="lang-switch" aria-label="Language / 语言">
+            {% if lang == "zh" %}
+              <a href="/" hreflang="en" lang="en">English</a>
+              <span aria-current="page" lang="zh">中文</span>
+            {% else %}
+              <span aria-current="page" lang="en">English</span>
+              <a href="/zh/" hreflang="zh" lang="zh">中文</a>
+            {% endif %}
+          </nav>
+        </div>
       </header>
 
       {% block content %}{% endblock content %}
@@ -50,7 +53,7 @@
             href="https://github.com/Xuepoo/topoglyph"
             target="_blank"
             rel="noopener"
-            >Source</a
+            >{{ trans(key="footer_source", lang=lang) | safe }}</a
           >
           &middot;
           <a
@@ -59,10 +62,11 @@
             rel="noopener"
             >crates.io</a
           >
-          &middot; MIT Licensed
+          &middot; {{ trans(key="footer_license", lang=lang) | safe }}
         </p>
       </footer>
     </div>
+    {% include "i18n.html" %}
     {% block extra_body %}{% endblock extra_body %}
   </body>
 </html>
