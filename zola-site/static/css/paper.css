@@ -172,7 +172,7 @@ body {
 
 .editor-content pre {
   margin: 0;
-  font-family: var(--mono);
+  font-family: Consolas, "Courier New", "Segoe UI Symbol", "Apple Braille", monospace;
   font-size: 11px;
   line-height: 1;
   color: var(--ink);
