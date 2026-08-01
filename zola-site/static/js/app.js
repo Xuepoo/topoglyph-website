@@ -3,13 +3,19 @@ import init, {
   render_image,
   renderWithAtlas,
 } from "/wasm/topoglyph_wasm_engine.js";
+import {
+  PngExportError,
+  canvasToPngBlob,
+  downloadPngBlob,
+  renderTextArtCanvas,
+} from "./png-export.js";
 
 // ---------------------------------------------------------------------------
 // Shared state / boot
 // ---------------------------------------------------------------------------
 
 function t(key, params) {
-  let s = (window.I18N && window.I18N[key]) || key;
+  let s = window.I18N?.[key] || key;
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       s = s.split(`{${k}}`).join(String(v));
@@ -80,12 +86,10 @@ function wireCharsetControls(prefix) {
   );
 
   function updateVisibility() {
-    const isBuiltinLines = charsetSelect.value === "lines";
     const isCustom = charsetSelect.value === "custom";
     if (customField) customField.style.display = isCustom ? "" : "none";
     if (fontField) fontField.style.display = isCustom ? "" : "none";
-    if (glyphModeField)
-      glyphModeField.style.display = isCustom ? "" : "none";
+    if (glyphModeField) glyphModeField.style.display = isCustom ? "" : "none";
   }
   charsetSelect.addEventListener("change", updateVisibility);
   updateVisibility();
@@ -105,8 +109,9 @@ async function buildAtlasFromControls(prefix) {
       return AtlasHandle.builtin(charset);
     }
   }
-  
-  const customChars = document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
+
+  const customChars =
+    document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
   const fontInput = document.getElementById(`${prefix}opt-font`);
   const fontFile = fontInput?.files?.[0];
   if (!fontFile) {
@@ -116,26 +121,12 @@ async function buildAtlasFromControls(prefix) {
   return AtlasHandle.fromFont(charset, customChars, fontBytes);
 }
 
-function charsetLabel(charset) {
-  switch (charset) {
-    case "ascii":
-      return t("js_charset_ascii");
-    case "blocks":
-      return t("js_charset_blocks");
-    case "braille":
-      return t("js_charset_braille");
-    case "custom":
-      return t("js_charset_custom");
-    default:
-      return charset;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Image mode
 // ---------------------------------------------------------------------------
 
 let imageBytes = null;
+let hasRenderedOutput = false;
 
 const dropzone = document.getElementById("dropzone");
 const fileInput = document.getElementById("file-input");
@@ -150,6 +141,14 @@ const outputMeta = document.getElementById("output-meta");
 function updateImageButtons() {
   btnRender.disabled = !wasmReady || imageBytes === null;
 }
+
+function updateOutputButtons() {
+  btnCopyText.disabled = !hasRenderedOutput;
+  btnCopyHtml.disabled = !hasRenderedOutput;
+  btnDownloadPng.disabled = !hasRenderedOutput;
+}
+
+updateOutputButtons();
 
 function bindRangeDisplay(rangeId, displayId) {
   const range = document.getElementById(rangeId);
@@ -204,8 +203,10 @@ document.addEventListener("paste", (e) => {
       const file = item.getAsFile();
       if (file) {
         // Automatically switch to Image tab if paste happens
-        const imageTabBtn = document.querySelector('.tab-btn[data-tab="image"]');
-        if (imageTabBtn && !imageTabBtn.classList.contains('is-active')) {
+        const imageTabBtn = document.querySelector(
+          '.tab-btn[data-tab="image"]',
+        );
+        if (imageTabBtn && !imageTabBtn.classList.contains("is-active")) {
           imageTabBtn.click();
         }
         handleImageFile(file);
@@ -266,6 +267,10 @@ btnRender.addEventListener("click", async () => {
     }
     const elapsed = (performance.now() - start).toFixed(0);
 
+    if (!result.text?.trim()) {
+      throw new Error(t("js_empty_render"));
+    }
+
     outputPre.classList.remove("empty-state");
     if (options.output_format === "html") {
       outputPre.innerHTML = result.text;
@@ -274,9 +279,8 @@ btnRender.addEventListener("click", async () => {
     }
     outputMeta.textContent = `${result.columns}x${result.rows} \u00b7 ${elapsed}ms`;
     outputMeta.style.display = "";
-    btnCopyText.disabled = false;
-    btnCopyHtml.disabled = false;
-    btnDownloadPng.disabled = false;
+    hasRenderedOutput = true;
+    updateOutputButtons();
     setImageStatus(t("js_ready"));
   } catch (e) {
     setImageStatus(t("js_render_failed") + (e?.message ?? e), true);
@@ -303,72 +307,28 @@ btnCopyHtml.addEventListener("click", async () => {
   }
 });
 
-btnDownloadPng.addEventListener("click", () => {
-  setImageStatus("Rendering PNG...");
-  const width = outputPre.offsetWidth;
-  const height = outputPre.offsetHeight;
-  
-  // Get computed styles to preserve accurate look
-  const computedStyle = window.getComputedStyle(outputPre);
-  const bgColor = window.getComputedStyle(document.documentElement).getPropertyValue('--page-bg') || '#121212';
-  const textColor = window.getComputedStyle(document.documentElement).getPropertyValue('--ink') || '#e8e8e8';
-  const fontFamily = computedStyle.fontFamily.replace(/"/g, "'");
-  const fontSize = computedStyle.fontSize;
-  const lineHeight = computedStyle.lineHeight;
-  
-  const htmlStr = new XMLSerializer().serializeToString(outputPre);
-  
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>
-            pre {
-              margin: 0;
-              padding: 20px;
-              font-family: ${fontFamily};
-              font-size: ${fontSize};
-              line-height: ${lineHeight};
-              color: ${textColor};
-              white-space: pre;
-              background: ${bgColor};
-              width: 100%;
-              height: 100%;
-              box-sizing: border-box;
-            }
-          </style>
-          ${htmlStr}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
-  
-  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-    
-    const pngUrl = canvas.toDataURL("image/png");
-    const a = document.createElement("a");
-    a.href = pngUrl;
-    a.download = "topoglyph-output.png";
-    a.click();
+function pngExportErrorMessage(error) {
+  if (error instanceof PngExportError) {
+    if (error.code === "EMPTY_OUTPUT") return t("js_png_empty");
+    if (error.code === "OUTPUT_TOO_LARGE") return t("js_png_too_large");
+  }
+  return t("js_png_failed") + (error?.message ?? error);
+}
+
+btnDownloadPng.addEventListener("click", async () => {
+  btnDownloadPng.disabled = true;
+  setImageStatus(t("js_rendering_png"));
+
+  try {
+    const canvas = await renderTextArtCanvas(outputPre);
+    const blob = await canvasToPngBlob(canvas);
+    downloadPngBlob(blob, "topoglyph-output.png");
     setImageStatus(t("js_ready"));
-  };
-  img.onerror = () => {
-    setImageStatus("Failed to render PNG", true);
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
+  } catch (error) {
+    setImageStatus(pngExportErrorMessage(error), true);
+  } finally {
+    updateOutputButtons();
+  }
 });
 
 // Zoom support for editor view
@@ -484,40 +444,44 @@ btnInspectAtlas.addEventListener("click", async () => {
 
 function saveState() {
   const state = {};
-  document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach(el => {
-    if (el.type === 'file') return;
-    state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
-  });
-  const activeTab = document.querySelector('.tab-btn.is-active')?.dataset.tab;
+  document
+    .querySelectorAll('input[id*="opt-"], select[id*="opt-"]')
+    .forEach((el) => {
+      if (el.type === "file") return;
+      state[el.id] = el.type === "checkbox" ? el.checked : el.value;
+    });
+  const activeTab = document.querySelector(".tab-btn.is-active")?.dataset.tab;
   if (activeTab) state._activeTab = activeTab;
-  localStorage.setItem('topoglyph-state', JSON.stringify(state));
+  localStorage.setItem("topoglyph-state", JSON.stringify(state));
 }
 function restoreState() {
   try {
-    const raw = localStorage.getItem('topoglyph-state');
+    const raw = localStorage.getItem("topoglyph-state");
     if (!raw) return;
     const state = JSON.parse(raw);
     Object.entries(state).forEach(([id, val]) => {
-      if (id === '_activeTab') {
+      if (id === "_activeTab") {
         const btn = document.querySelector(`.tab-btn[data-tab="${val}"]`);
         if (btn) btn.click();
         return;
       }
       const el = document.getElementById(id);
       if (!el) return;
-      if (el.type === 'checkbox') el.checked = val;
+      if (el.type === "checkbox") el.checked = val;
       else el.value = val;
-      el.dispatchEvent(new Event('input'));
-      el.dispatchEvent(new Event('change'));
+      el.dispatchEvent(new Event("input"));
+      el.dispatchEvent(new Event("change"));
     });
-  } catch (e) {}
+  } catch {}
 }
-document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach(el => {
-  el.addEventListener('change', saveState);
-  el.addEventListener('input', saveState);
-});
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', saveState);
+document
+  .querySelectorAll('input[id*="opt-"], select[id*="opt-"]')
+  .forEach((el) => {
+    el.addEventListener("change", saveState);
+    el.addEventListener("input", saveState);
+  });
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", saveState);
 });
 restoreState();
 boot();
@@ -526,10 +490,9 @@ if (btnFullscreen) {
   btnFullscreen.addEventListener("click", () => {
     const editorArea = document.querySelector(".editor-area");
     if (!document.fullscreenElement) {
-      editorArea.requestFullscreen().catch(err => {});
+      editorArea.requestFullscreen().catch(() => {});
     } else {
       document.exitFullscreen();
     }
   });
 }
-
