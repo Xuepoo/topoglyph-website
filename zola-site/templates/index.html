@@ -4,7 +4,6 @@
 <div class="sidebar-content">
   <div class="tabs">
     <button class="tab-btn is-active" data-tab="image">{{ trans(key="tab_image", lang=lang) | safe }}</button>
-    <button class="tab-btn" data-tab="video">{{ trans(key="tab_video", lang=lang) | safe }}</button>
     <button class="tab-btn" data-tab="atlas">{{ trans(key="tab_atlas", lang=lang) | safe }}</button>
   </div>
 
@@ -32,6 +31,9 @@
       <div class="field">
         <label for="opt-height">{{ trans(key="row_label", lang=lang) | safe }}</label>
         <input type="number" id="opt-height" min="10" max="200" placeholder="Auto" />
+      </div>
+      <div class="field">
+        <button class="btn is-secondary" id="btn-reset-size" style="width:100%;margin-top:2px;">↺ Reset to Auto</button>
       </div>
       <div class="field field-checkbox">
         <input type="checkbox" id="opt-invert" />
@@ -76,51 +78,6 @@
 
   </div>
 
-  <!-- ==================== VIDEO MODE ==================== -->
-  <div class="tab-panel is-hidden" data-tab-panel="video">
-    <div class="dropzone" id="dropzone-video">
-      <p>{{ trans(key="drop_video", lang=lang) | safe }}</p>
-      <div class="filename" id="filename-video"></div>
-    </div>
-    <input type="file" id="file-input-video" accept="video/*" style="display: none" />
-
-    <div class="actions-row" style="margin-bottom: 8px;">
-      <button class="btn" id="btn-convert-video" disabled>{{ trans(key="convert_btn", lang=lang) | safe }}</button>
-    </div>
-    <div class="status-line" id="status-line-video"></div>
-    <div class="progress-track" id="video-progress-track" style="margin-bottom: 16px;">
-      <div class="progress-fill" id="video-progress-fill" style="width: 0%"></div>
-    </div>
-
-    {% set scope = "video-" %} {% include "charset_controls.html" %}
-
-    <div class="controls-grid" style="margin-top: 16px">
-      <div class="field">
-        <label for="opt-video-width">{{ trans(key="col_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-video-width" min="10" max="400" placeholder="Auto" />
-      </div>
-      <div class="field">
-        <label for="opt-video-height">{{ trans(key="row_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-video-height" min="10" max="200" placeholder="Auto" />
-      </div>
-      <div class="field field-checkbox">
-        <input type="checkbox" id="opt-video-color" />
-        <label for="opt-video-color">{{ trans(key="color_video_label", lang=lang) | safe }}</label>
-      </div>
-      <div class="field">
-        <label for="opt-video-preset">{{ trans(key="preset_label", lang=lang) | safe }}</label>
-        <select id="opt-video-preset">
-          <option value="line-art">{{ trans(key="preset_line_art", lang=lang) | safe }}</option>
-          <option value="han-emoji">{{ trans(key="preset_han_emoji", lang=lang) | safe }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="video-opt-fps">{{ trans(key="fps_label", lang=lang) | safe }} <span class="range-value" id="video-opt-fps-value">10</span></label>
-        <input type="range" id="video-opt-fps" min="1" max="30" step="1" value="10" />
-      </div>
-    </div>
-
-  </div>
 
   <!-- ==================== ATLAS PREVIEW MODE ==================== -->
   <div class="tab-panel is-hidden" data-tab-panel="atlas">
@@ -150,16 +107,6 @@
   <div id="output-meta" class="output-meta" style="display:none"></div>
 </div>
 
-<div class="editor-content tab-panel is-hidden" data-tab-panel="video">
-  <div class="editor-header" style="padding: 12px 20px; display:flex; align-items:center; gap:12px; border-bottom: 1px solid var(--paper-edge);">
-    <button class="btn" id="btn-play-pause" disabled>{{ trans(key="play_btn", lang=lang) | safe }}</button>
-    <a id="btn-download-tglyph" class="btn is-secondary" style="display:none">{{ trans(key="download_tglyph_btn", lang=lang) | safe }}</a>
-  </div>
-  <pre id="video-output-pre" class="empty-state">{{ trans(key="empty_playback", lang=lang) | safe }}</pre>
-  <div id="video-output-meta" class="output-meta" style="display:none"></div>
-  <video id="video-source" style="display:none" crossorigin="anonymous" preload="auto"></video>
-  <canvas id="video-frame-canvas" style="display:none"></canvas>
-</div>
 
 
 <div class="editor-content tab-panel is-hidden" data-tab-panel="atlas">

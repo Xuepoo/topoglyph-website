@@ -1,7 +1,5 @@
 import init, {
   AtlasHandle,
-  AnimationBuilder,
-  decodeAnimation,
   render_image,
   renderWithAtlas,
 } from "/wasm/topoglyph_wasm_engine.js";
@@ -27,15 +25,12 @@ async function boot() {
     await init();
     wasmReady = true;
     setImageStatus(t("js_ready"));
-    setVideoStatus(t("js_ready"));
     setAtlasStatus(t("js_ready"));
     updateImageButtons();
-    updateVideoButtons();
     updateAtlasButtons();
   } catch (e) {
     const msg = t("js_wasm_load_failed") + e;
     setImageStatus(msg, true);
-    setVideoStatus(msg, true);
     setAtlasStatus(msg, true);
   }
 }
@@ -47,7 +42,6 @@ function setStatusFor(elId, message, isError) {
   el.classList.toggle("is-error", Boolean(isError));
 }
 const setImageStatus = (m, e) => setStatusFor("status-line", m, e);
-const setVideoStatus = (m, e) => setStatusFor("video-status-line", m, e);
 const setAtlasStatus = (m, e) => setStatusFor("atlas-status-line", m, e);
 
 // ---------------------------------------------------------------------------
@@ -97,14 +91,10 @@ function wireCharsetControls(prefix) {
   updateVisibility();
 }
 wireCharsetControls("");
-wireCharsetControls("video-");
 wireCharsetControls("atlas-");
 
 /**
- * Reads a scoped set of charset controls and builds an AtlasHandle. Caches
- * nothing here — callers that need the same atlas across many calls (video
- * frame-by-frame conversion) should build it once themselves and hold the
- * handle, rather than calling this per-frame.
+ * Reads a scoped set of charset controls and builds an AtlasHandle.
  */
 async function buildAtlasFromControls(prefix) {
   const charset = document.getElementById(`${prefix}opt-charset`).value;
@@ -173,7 +163,6 @@ bindRangeDisplay("opt-tolerance", "val-tolerance");
 bindRangeDisplay("opt-chaikin", "val-chaikin");
 bindRangeDisplay("opt-topk", "val-topk");
 bindRangeDisplay("opt-relaxation", "val-relaxation");
-bindRangeDisplay("video-opt-fps", "video-opt-fps-value");
 
 function wireDropzone(dropzoneEl, fileInputEl, onFile) {
   dropzoneEl.addEventListener("click", () => fileInputEl.click());
@@ -202,29 +191,6 @@ async function handleImageFile(file) {
   filenameEl.textContent = file.name;
   updateImageButtons();
   setImageStatus(t("js_ready"));
-
-  // Auto-calculate aspect ratio
-  if (file.type.startsWith('image/')) {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const aspectRatio = img.naturalWidth / img.naturalHeight;
-      // Characters are 1:2 aspect ratio, so grid_width = grid_height * aspectRatio * 2
-      // We'll keep width at 120 and scale height, clamped between 10 and 200.
-      const targetWidth = 120;
-      let targetHeight = Math.round(targetWidth / (aspectRatio * 2));
-      targetHeight = Math.max(10, Math.min(targetHeight, 200));
-      
-      const widthInput = document.getElementById('opt-width');
-      const heightInput = document.getElementById('opt-height');
-      if (widthInput && heightInput) {
-        widthInput.value = targetWidth;
-        heightInput.value = targetHeight;
-      }
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-  }
 }
 
 wireDropzone(dropzone, fileInput, handleImageFile);
@@ -417,179 +383,13 @@ outputPre.addEventListener("wheel", (e) => {
     outputPre.style.fontSize = `${currentZoom}px`;
   }
 });
-
 // ---------------------------------------------------------------------------
-// Video / GIF mode
+// Reset size button
 // ---------------------------------------------------------------------------
-
-let videoFile = null;
-let lastTglyphText = "";
-let playbackTimer = null;
-let playbackFrameIndex = 0;
-let decodedPlayback = null;
-let isPlaying = false;
-
-const videoDropzone = document.getElementById("dropzone-video");
-const videoFileInput = document.getElementById("file-input-video");
-const videoFilenameEl = document.getElementById("filename-video");
-const videoEl = document.getElementById("video-source");
-const frameCanvas = document.getElementById("video-frame-canvas");
-const btnConvertVideo = document.getElementById("btn-convert-video");
-const btnDownloadTglyph = document.getElementById("btn-download-tglyph");
-const btnPlayPause = document.getElementById("btn-play-pause");
-const videoOutputPre = document.getElementById("video-output-pre");
-const videoOutputMeta = document.getElementById("video-output-meta");
-const progressTrack = document.getElementById("video-progress-track");
-const progressFill = document.getElementById("video-progress-fill");
-
-function updateVideoButtons() {
-  btnConvertVideo.disabled = !wasmReady || videoFile === null;
-}
-
-wireDropzone(videoDropzone, videoFileInput, (file) => {
-  if (!file) return;
-  videoFile = file;
-  videoFilenameEl.textContent = file.name;
-  updateVideoButtons();
-  setVideoStatus(t("js_ready"));
-});
-
-/**
- * Grabs `sampleFps` frames per second of `file` (a <video>-decodable video,
- * or an animated GIF — Chromium/Firefox both play GIFs through the same
- * <video> element) by seeking through its duration and drawing each frame
- * onto an offscreen canvas, yielding PNG bytes one at a time. There is no
- * in-browser FFmpeg: this is genuinely all the native <video>/<canvas>
- * decoding the browser already has, matching the module docs on
- * `AnimationBuilder`.
- */
-async function* extractFrames(file, sampleFps) {
-  const url = URL.createObjectURL(file);
-  try {
-    videoEl.src = url;
-    await new Promise((resolve, reject) => {
-      videoEl.onloadedmetadata = resolve;
-      videoEl.onerror = () => reject(new Error(t("js_decode_failed")));
-    });
-
-    const duration = videoEl.duration;
-    const totalFrames = Math.max(1, Math.floor(duration * sampleFps));
-    frameCanvas.width = videoEl.videoWidth;
-    frameCanvas.height = videoEl.videoHeight;
-    const ctx = frameCanvas.getContext("2d");
-
-    for (let i = 0; i < totalFrames; i++) {
-      const t = i / sampleFps;
-      await new Promise((resolve) => {
-        videoEl.onseeked = resolve;
-        videoEl.currentTime = Math.min(t, Math.max(duration - 0.001, 0));
-      });
-      ctx.drawImage(videoEl, 0, 0, frameCanvas.width, frameCanvas.height);
-      const blob = await new Promise((resolve) =>
-        frameCanvas.toBlob(resolve, "image/png"),
-      );
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      yield { bytes, index: i, total: totalFrames };
-    }
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-btnConvertVideo.addEventListener("click", async () => {
-  if (!videoFile) return;
-  btnConvertVideo.disabled = true;
-  btnDownloadTglyph.disabled = true;
-  btnPlayPause.disabled = true;
-  stopPlayback();
-  progressTrack.style.display = "";
-  progressFill.style.width = "0%";
-  setVideoStatus(t("js_extracting"));
-
-  try {
-    const atlas = await buildAtlasFromControls("video-");
-    const builder = new AnimationBuilder();
-    const sampleFps = parseInt(
-      document.getElementById("video-opt-fps").value,
-      10,
-    );
-    const options = readImageRenderOptions("video-");
-
-    let lastTotal = 1;
-    for await (const frame of extractFrames(videoFile, sampleFps)) {
-      builder.pushFrame(frame.bytes, options, atlas);
-      lastTotal = frame.total;
-      const pct = Math.round(((frame.index + 1) / frame.total) * 100);
-      progressFill.style.width = pct + "%";
-      setVideoStatus(
-        t("js_converting_frame", {
-          current: frame.index + 1,
-          total: frame.total,
-        }),
-      );
-    }
-
-    setVideoStatus(t("js_encoding"));
-    lastTglyphText = builder.finish(sampleFps, options.color);
-
-    decodedPlayback = decodeAnimation(lastTglyphText);
-    playbackFrameIndex = 0;
-    renderPlaybackFrame();
-
-    videoOutputMeta.textContent = `${decodedPlayback.width}x${decodedPlayback.height} \u00b7 ${decodedPlayback.frames.length} ${t("js_frames_meta")} \u00b7 ${(lastTglyphText.length / 1024).toFixed(1)}KB`;
-    btnDownloadTglyph.disabled = false;
-    btnPlayPause.disabled = false;
-    setVideoStatus(t("js_done", { count: lastTotal }));
-  } catch (e) {
-    setVideoStatus(t("js_conversion_failed") + (e?.message ?? e), true);
-  } finally {
-    updateVideoButtons();
-    progressTrack.style.display = "none";
-  }
-});
-
-function renderPlaybackFrame() {
-  if (!decodedPlayback) return;
-  videoOutputPre.classList.remove("empty-state");
-  videoOutputPre.textContent = decodedPlayback.frames[playbackFrameIndex];
-}
-
-function stopPlayback() {
-  isPlaying = false;
-  btnPlayPause.textContent = t("js_play");
-  if (playbackTimer !== null) {
-    clearTimeout(playbackTimer);
-    playbackTimer = null;
-  }
-}
-
-function stepPlayback() {
-  if (!isPlaying || !decodedPlayback) return;
-  playbackFrameIndex = (playbackFrameIndex + 1) % decodedPlayback.frames.length;
-  renderPlaybackFrame();
-  const frameDurationMs = 1000 / Math.max(decodedPlayback.fps, 1);
-  playbackTimer = setTimeout(stepPlayback, frameDurationMs);
-}
-
-btnPlayPause.addEventListener("click", () => {
-  if (!decodedPlayback) return;
-  if (isPlaying) {
-    stopPlayback();
-  } else {
-    isPlaying = true;
-    btnPlayPause.textContent = t("js_pause");
-    stepPlayback();
-  }
-});
-
-btnDownloadTglyph.addEventListener("click", () => {
-  const blob = new Blob([lastTglyphText], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "topoglyph-animation.tglyph";
-  a.click();
-  URL.revokeObjectURL(url);
+document.getElementById("btn-reset-size")?.addEventListener("click", () => {
+  document.getElementById("opt-width").value = "";
+  document.getElementById("opt-height").value = "";
+  saveState();
 });
 
 // ---------------------------------------------------------------------------
