@@ -93,10 +93,25 @@ pub struct AtlasHandle {
 impl AtlasHandle {
     /// Builds the built-in 17-glyph line/box-drawing atlas (no font
     /// required). This is the `lines` charset from `topoglyph-cli`.
-    #[wasm_bindgen(js_name = builtinLines)]
-    pub fn builtin_lines() -> Result<AtlasHandle, JsValue> {
-        let inner = GlyphAtlas::from_text("", &AtlasOptions::default())
-            .map_err(|e| JsValue::from_str(&e))?;
+    #[wasm_bindgen(js_name = builtin)]
+    pub fn builtin(charset: &str) -> Result<AtlasHandle, JsValue> {
+        if charset == "lines" {
+            let inner = GlyphAtlas::from_text("", &AtlasOptions::default())
+                .map_err(|e| JsValue::from_str(&e))?;
+            return Ok(AtlasHandle { inner });
+        }
+        let glyphs = match charset {
+            "ascii" => topoglyph_atlas::precomputed::build_ascii_glyphs(),
+            "blocks" => topoglyph_atlas::precomputed::build_blocks_glyphs(),
+            "braille" => topoglyph_atlas::precomputed::build_braille_glyphs(),
+            _ => return Err(JsValue::from_str(&format!("Invalid builtin charset: '{charset}'"))),
+        };
+        let index = topoglyph_core::matching::GlyphIndex::build(&glyphs);
+        let inner = GlyphAtlas {
+            font_id: format!("precomputed_{charset}"),
+            glyphs,
+            index,
+        };
         Ok(AtlasHandle { inner })
     }
 

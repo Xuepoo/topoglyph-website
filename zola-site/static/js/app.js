@@ -108,21 +108,19 @@ wireCharsetControls("atlas-");
  */
 async function buildAtlasFromControls(prefix) {
   const charset = document.getElementById(`${prefix}opt-charset`).value;
-  if (charset === "lines") {
-    return AtlasHandle.builtinLines();
+  if (charset !== "custom") {
+    const fontInput = document.getElementById(`${prefix}opt-font`);
+    const fontFile = fontInput?.files?.[0];
+    if (!fontFile) {
+      return AtlasHandle.builtin(charset);
+    }
   }
-  const customChars =
-    document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
+  
+  const customChars = document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
   const fontInput = document.getElementById(`${prefix}opt-font`);
   const fontFile = fontInput?.files?.[0];
   if (!fontFile) {
-    // Every charset besides "Lines" rasterizes its characters from an
-    // uploaded font (there is no built-in font for ASCII/Blocks/Braille/
-    // Custom) -- see charset_controls.html's "Font File" field, which
-    // only appears once a non-"lines" charset is selected. This is the
-    // most common first-time mistake, so spell out the fix rather than
-    // just naming the missing precondition.
-    throw new Error(t("js_font_needed", { charset: charsetLabel(charset) }));
+    throw new Error(t("js_font_needed"));
   }
   const fontBytes = new Uint8Array(await fontFile.arrayBuffer());
   return AtlasHandle.fromFont(charset, customChars, fontBytes);
@@ -171,10 +169,10 @@ function bindRangeDisplay(rangeId, displayId) {
     display.textContent = range.value;
   });
 }
-bindRangeDisplay("opt-tolerance", "opt-tolerance-value");
-bindRangeDisplay("opt-chaikin", "opt-chaikin-value");
-bindRangeDisplay("opt-top-k", "opt-top-k-value");
-bindRangeDisplay("opt-relaxation", "opt-relaxation-value");
+bindRangeDisplay("opt-tolerance", "val-tolerance");
+bindRangeDisplay("opt-chaikin", "val-chaikin");
+bindRangeDisplay("opt-topk", "val-topk");
+bindRangeDisplay("opt-relaxation", "val-relaxation");
 bindRangeDisplay("video-opt-fps", "video-opt-fps-value");
 
 function wireDropzone(dropzoneEl, fileInputEl, onFile) {
