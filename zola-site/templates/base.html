@@ -96,6 +96,14 @@
           </ol>
           <h3>{{ trans(key="usage_atlas_title", lang=lang) | safe }}</h3>
           <p>{{ trans(key="usage_atlas_1", lang=lang) | safe }}</p>
+          <h3>{% if lang == "zh" %}参数指南{% else %}Parameters Guide{% endif %}</h3>
+          <ul style="font-size: 13px; line-height: 1.6; margin-top: 8px;">
+            <li><strong>{% if lang == "zh" %}字符集 (Charset){% else %}Charset{% endif %}</strong>: {% if lang == "zh" %}使用的“调色板”。Lines/ASCII/Blocks/Braille 都是内置的，无需字体。只有选 Custom 时才需要上传字体文件。{% else %}The "palette" of characters. Lines/ASCII/Blocks/Braille are built-in. You only need to upload a font file if you select Custom.{% endif %}</li>
+            <li><strong>{% if lang == "zh" %}匹配预设 (Preset){% else %}Preset{% endif %}</strong>: {% if lang == "zh" %}Line Art 关注线条的拓扑连接；Han / Emoji 关注像素墨水密度，表现更圆润。{% else %}Line Art focuses on structural topology; Han / Emoji focuses on pixel density for smoother, bolder shapes.{% endif %}</li>
+            <li><strong>{% if lang == "zh" %}列数 (Columns){% else %}Columns{% endif %}</strong>: {% if lang == "zh" %}留空为自动适应。填入更大的数字（如 150-200）能获得原图级别的超高分辨率。{% else %}Leave empty for Auto. Higher numbers (e.g., 150-200) yield much higher resolution.{% endif %}</li>
+            <li><strong>RDP / Chaikin</strong>: {% if lang == "zh" %}轮廓提取前处理。Chaikin 调到 2 或 3 会让提取出的曲线更加圆滑。{% else %}Contour pre-processing. Set Chaikin to 2 or 3 for smoother curves.{% endif %}</li>
+            <li><strong>Top-K / Relaxation</strong>: {% if lang == "zh" %}控制匹配算法在相邻网格间寻找平滑过渡的能力。{% else %}Controls how hard the algorithm tries to seamlessly connect neighboring characters.{% endif %}</li>
+          </ul>
         </div>
       </div>
     </dialog>
