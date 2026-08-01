@@ -3,6 +3,7 @@ import init, {
   render_image,
   renderWithAtlas,
 } from "/wasm/topoglyph_wasm_engine.js";
+import { describeGridSizing } from "./grid-sizing.js";
 import {
   PngExportError,
   canvasToPngBlob,
@@ -344,6 +345,23 @@ outputPre.addEventListener("wheel", (e) => {
     outputPre.style.fontSize = `${currentZoom}px`;
   }
 });
+const gridWidthInput = document.getElementById("opt-width");
+const gridHeightInput = document.getElementById("opt-height");
+const gridSizeStatus = document.getElementById("grid-size-status");
+
+function updateGridSizeStatus() {
+  if (!gridSizeStatus) return;
+  const description = describeGridSizing(
+    gridWidthInput?.value ?? "",
+    gridHeightInput?.value ?? "",
+  );
+  gridSizeStatus.textContent = t(description.key, description.params);
+  gridSizeStatus.classList.toggle("is-fixed", description.kind === "fixed");
+}
+
+gridWidthInput?.addEventListener("input", updateGridSizeStatus);
+gridHeightInput?.addEventListener("input", updateGridSizeStatus);
+
 // ---------------------------------------------------------------------------
 // Reset size button
 // ---------------------------------------------------------------------------
@@ -351,6 +369,7 @@ document.getElementById("btn-reset-size")?.addEventListener("click", () => {
   document.getElementById("opt-width").value = "";
   document.getElementById("opt-height").value = "";
   saveState();
+  updateGridSizeStatus();
 });
 
 // ---------------------------------------------------------------------------
@@ -484,6 +503,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", saveState);
 });
 restoreState();
+updateGridSizeStatus();
 boot();
 const btnFullscreen = document.getElementById("btn-fullscreen");
 if (btnFullscreen) {
