@@ -172,6 +172,9 @@ body {
   flex: 1;
   overflow: auto;
   padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .editor-content pre {
@@ -191,6 +194,21 @@ body {
   padding: 60px 20px;
   text-align: center;
   white-space: normal;
+}
+
+.output-meta {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+  background: var(--page-bg);
+  padding: 4px 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 5;
 }
 
 
