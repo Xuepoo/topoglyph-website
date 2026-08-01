@@ -24,6 +24,8 @@ pub struct RenderOptions {
     pub width: Option<usize>,
     pub height: Option<usize>,
     #[serde(default)]
+    pub cell_aspect_ratio: Option<f32>,
+    #[serde(default)]
     pub tolerance: f64,
     #[serde(default = "default_chaikin_iters")]
     pub chaikin_iters: usize,
@@ -54,6 +56,12 @@ fn default_relaxation_rounds() -> usize {
 }
 fn default_output_format() -> String {
     "text".to_string()
+}
+
+fn resolve_cell_aspect_ratio(value: Option<f32>) -> f32 {
+    value
+        .filter(|ratio| ratio.is_finite() && (0.25..=1.0).contains(ratio))
+        .unwrap_or(0.5)
 }
 
 #[derive(Serialize)]
@@ -104,7 +112,11 @@ impl AtlasHandle {
             "ascii" => topoglyph_atlas::precomputed::build_ascii_glyphs(),
             "blocks" => topoglyph_atlas::precomputed::build_blocks_glyphs(),
             "braille" => topoglyph_atlas::precomputed::build_braille_glyphs(),
-            _ => return Err(JsValue::from_str(&format!("Invalid builtin charset: '{charset}'"))),
+            _ => {
+                return Err(JsValue::from_str(&format!(
+                    "Invalid builtin charset: '{charset}'"
+                )))
+            }
         };
         let index = topoglyph_core::matching::GlyphIndex::build(&glyphs);
         let inner = GlyphAtlas {
@@ -242,6 +254,7 @@ fn render_canvas(
     let grid_opts = GridOptions {
         columns: opts.width.unwrap_or(120),
         rows: opts.height,
+        cell_aspect_ratio: resolve_cell_aspect_ratio(opts.cell_aspect_ratio),
         ..Default::default()
     };
     let (out_cols, out_rows, cell_descriptors) = clipping::process_scene(&scene, &grid_opts);
@@ -443,4 +456,21 @@ pub fn builtin_charsets() -> Vec<JsValue> {
         .iter()
         .map(|s| JsValue::from_str(s))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_cell_aspect_ratio;
+
+    #[test]
+    fn cell_aspect_ratio_accepts_browser_measurements() {
+        assert_eq!(resolve_cell_aspect_ratio(Some(0.6)), 0.6);
+    }
+
+    #[test]
+    fn cell_aspect_ratio_rejects_unsafe_measurements() {
+        for value in [None, Some(f32::NAN), Some(0.0), Some(-0.5), Some(1.1)] {
+            assert_eq!(resolve_cell_aspect_ratio(value), 0.5);
+        }
+    }
 }
