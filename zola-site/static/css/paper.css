@@ -197,6 +197,17 @@ body {
   transition: font-size 0.1s ease;
 }
 
+.output-cell-probe {
+  position: absolute;
+  visibility: hidden;
+  display: inline-block;
+  pointer-events: none;
+  white-space: pre;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
 .editor-content pre.empty-state {
   color: var(--ink-muted);
   font-family: var(--serif);

@@ -4,6 +4,7 @@ import init, {
   renderWithAtlas,
 } from "/wasm/topoglyph_wasm_engine.js";
 import { describeGridSizing } from "./grid-sizing.js";
+import { measureOutputCellAspect } from "./output-aspect.js";
 import {
   PngExportError,
   canvasToPngBlob,
@@ -223,6 +224,7 @@ function readImageRenderOptions(prefix) {
   return {
     width: wStr ? parseInt(wStr, 10) : null,
     height: hStr ? parseInt(hStr, 10) : null,
+    cell_aspect_ratio: measureOutputCellAspect(),
     tolerance: parseFloat(
       document.getElementById(`${prefix}opt-tolerance`)?.value ?? "0.5",
     ),
