@@ -14,14 +14,19 @@
   --accent: #b0413e;
   --shadow: 0 2px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
   --page-bg: #ece7dc;
-  --page-bg-gradient: radial-gradient(circle at 50% 0%, #f4f0e6 0%, #ece7dc 60%);
+  --page-bg-gradient: radial-gradient(
+    circle at 50% 0%,
+    #f4f0e6 0%,
+    #ece7dc 60%
+  );
   --input-bg: #fff;
   --border-color: var(--border-color);
   --stripe-bg: rgba(0, 0, 0, 0.015);
   --code-bg: var(--code-bg);
   --dropzone-bg: var(--dropzone-bg);
   --mono:
-    "Cascadia Code", "JetBrains Mono", "IBM Plex Mono", ui-monospace, "Apple Braille", monospace;
+    "Cascadia Code", "JetBrains Mono", "IBM Plex Mono", ui-monospace,
+    "Apple Braille", monospace;
   --serif: "IBM Plex Serif", Georgia, serif;
 }
 
@@ -33,7 +38,11 @@
   --accent: #e57373;
   --shadow: 0 2px 3px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
   --page-bg: #121212;
-  --page-bg-gradient: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #121212 60%);
+  --page-bg-gradient: radial-gradient(
+    circle at 50% 0%,
+    #1a1a1a 0%,
+    #121212 60%
+  );
   --input-bg: #2d2d2d;
   --border-color: rgba(255, 255, 255, 0.25);
   --stripe-bg: rgba(255, 255, 255, 0.03);
@@ -45,7 +54,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -215,11 +225,6 @@ body {
   z-index: 5;
 }
 
-
-
-
-
-
 nav.lang-switch a,
 nav.lang-switch span {
   padding: 3px 8px;
@@ -239,7 +244,6 @@ nav.lang-switch span[aria-current="page"] {
   color: var(--paper-bg);
   border-color: var(--ink);
 }
-
 
 /* ---- Paper panel: the reusable "sheet" container ---- */
 .paper {
@@ -291,11 +295,6 @@ nav.lang-switch span[aria-current="page"] {
 }
 
 /* ---- The text-art output itself: real, selectable <pre> text ---- */
-
-
-
-
-
 
 /* ---- Controls ---- */
 .controls-grid {
@@ -633,31 +632,107 @@ a {
   color: var(--accent);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .app-layout {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .header-brand {
+    min-width: 0;
+  }
+
+  .header-brand p.tagline {
+    display: none;
+  }
+
+  .header-controls {
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .app-workspace {
+    flex: none;
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 24px;
+    border-right: 0;
+    border-bottom: 1px solid var(--paper-edge);
+  }
+
+  .editor-area {
+    flex: none;
+    width: 100%;
+    min-height: max(480px, 60vh);
+  }
+
+  .editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .editor-actions {
+    position: static;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .editor-actions .btn {
+    flex: 1 1 120px;
+  }
+
+  .editor-content {
+    min-height: 400px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 16px;
+  }
+
+  .editor-content .output-meta,
+  .editor-header .output-meta {
+    bottom: 16px;
+    left: 16px;
+  }
+
   .container {
     padding: 32px 14px 60px;
   }
+
   header.masthead h1 {
     font-size: 20px;
   }
+
   .output-scroll pre {
     font-size: 8px;
   }
-  /* Action buttons (Render/Copy/Download, Convert/Download .tglyph) wrap to
-   * their own full-width row below this breakpoint instead of shrinking or
-   * spilling past the paper panel's padding, since a stacked layout reads
-   * better than several half-width buttons once labels like
-   * "Download .tglyph" no longer fit on one line next to their siblings. */
+
   .actions-row {
     flex-direction: column;
   }
+
   .actions-row .btn {
-    width: 100%;
-  }
-  .tabs {
-    flex-direction: column;
-  }
-  .tab-btn {
     width: 100%;
   }
 }
@@ -669,11 +744,13 @@ a {
   padding: 0;
   max-width: min(680px, 92vw);
   max-height: 80vh;
-  box-shadow: 0 8px 40px rgba(0,0,0,.2);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
   background: var(--paper-bg);
   color: var(--text);
 }
-.help-dialog::backdrop { background: rgba(0,0,0,.45); }
+.help-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
 .help-dialog-inner {
   padding: 28px 32px 28px;
   overflow-y: auto;
@@ -682,7 +759,8 @@ a {
 }
 .help-dialog-close {
   position: absolute;
-  top: 14px; right: 16px;
+  top: 14px;
+  right: 16px;
   background: none;
   border: none;
   font-size: 18px;
@@ -690,4 +768,6 @@ a {
   color: var(--text-muted);
   line-height: 1;
 }
-.help-dialog-close:hover { color: var(--text); }
+.help-dialog-close:hover {
+  color: var(--text);
+}

@@ -19,21 +19,21 @@
     <div class="actions-row" style="margin-bottom: 8px;">
       <button class="btn" id="btn-render" disabled>{{ trans(key="render_btn", lang=lang) | safe }}</button>
     </div>
-    <div class="status-line" id="status-line" style="margin-bottom: 16px;">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
+    <div class="status-line" id="status-line" aria-live="polite" style="margin-bottom: 16px;">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
 
     {% set scope = "" %} {% include "charset_controls.html" %}
 
     <div class="controls-grid" style="margin-top: 16px">
       <div class="field">
         <label for="opt-width">{{ trans(key="col_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-width" min="10" max="400" placeholder="Auto" />
+        <input type="number" id="opt-width" min="10" max="400" placeholder="{{ trans(key="auto_placeholder", lang=lang) | safe }}" />
       </div>
       <div class="field">
         <label for="opt-height">{{ trans(key="row_label", lang=lang) | safe }}</label>
-        <input type="number" id="opt-height" min="10" max="200" placeholder="Auto" />
+        <input type="number" id="opt-height" min="10" max="200" placeholder="{{ trans(key="auto_placeholder", lang=lang) | safe }}" />
       </div>
       <div class="field">
-        <button class="btn is-secondary" id="btn-reset-size" style="width:100%;margin-top:2px;">↺ Reset to Auto</button>
+        <button class="btn is-secondary" id="btn-reset-size" style="width:100%;margin-top:2px;">↺ {{ trans(key="reset_auto_btn", lang=lang) | safe }}</button>
       </div>
       <div class="field field-checkbox">
         <input type="checkbox" id="opt-invert" />
@@ -85,7 +85,7 @@
     <div class="actions-row" style="margin-top: 16px">
       <button class="btn" id="btn-inspect-atlas">{{ trans(key="inspect_btn", lang=lang) | safe }}</button>
     </div>
-    <div class="status-line" id="status-line-atlas"></div>
+    <div class="status-line" id="atlas-status-line" aria-live="polite"></div>
   <div id="atlas-output-meta" class="output-meta" style="display:none"></div>
   </div>
 </div>
@@ -97,9 +97,9 @@
 <div class="editor-header tab-panel" data-tab-panel="image">
   <h2>{{ trans(key="output_title", lang=lang) | safe }}</h2>
   <div class="editor-actions">
-    <button class="btn is-secondary" id="btn-copy-text">Copy Text</button>
-    <button class="btn is-secondary" id="btn-copy-html">Copy HTML</button>
-    <button class="btn is-secondary" id="btn-download-png">Save PNG</button>
+    <button class="btn is-secondary" id="btn-copy-text" disabled>{{ trans(key="copy_text_btn", lang=lang) | safe }}</button>
+    <button class="btn is-secondary" id="btn-copy-html" disabled>{{ trans(key="copy_html_btn", lang=lang) | safe }}</button>
+    <button class="btn is-secondary" id="btn-download-png" disabled>{{ trans(key="save_png_btn", lang=lang) | safe }}</button>
   </div>
 </div>
 <div class="editor-content tab-panel" data-tab-panel="image">
