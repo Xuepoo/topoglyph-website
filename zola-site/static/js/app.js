@@ -679,3 +679,15 @@ btnInspectAtlas.addEventListener("click", async () => {
 });
 
 boot();
+const btnFullscreen = document.getElementById("btn-fullscreen");
+if (btnFullscreen) {
+  btnFullscreen.addEventListener("click", () => {
+    const editorArea = document.querySelector(".editor-area");
+    if (!document.fullscreenElement) {
+      editorArea.requestFullscreen().catch(err => {});
+    } else {
+      document.exitFullscreen();
+    }
+  });
+}
+
