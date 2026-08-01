@@ -21,8 +21,8 @@ pub fn start() {
 /// plain object and deserialized via `serde-wasm-bindgen`.
 #[derive(Deserialize)]
 pub struct RenderOptions {
-    pub width: usize,
-    pub height: usize,
+    pub width: Option<usize>,
+    pub height: Option<usize>,
     #[serde(default)]
     pub tolerance: f64,
     #[serde(default = "default_chaikin_iters")]
@@ -240,8 +240,8 @@ fn render_canvas(
     }
 
     let grid_opts = GridOptions {
-        columns: opts.width,
-        rows: Some(opts.height),
+        columns: opts.width.unwrap_or(120),
+        rows: opts.height,
         ..Default::default()
     };
     let (out_cols, out_rows, cell_descriptors) = clipping::process_scene(&scene, &grid_opts);

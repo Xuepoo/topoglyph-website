@@ -160,8 +160,12 @@ body {
 }
 
 .editor-actions {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
   display: flex;
   gap: 8px;
+  z-index: 10;
 }
 
 .editor-content {

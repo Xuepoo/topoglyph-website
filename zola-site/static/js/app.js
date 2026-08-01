@@ -250,9 +250,11 @@ document.addEventListener("paste", (e) => {
 });
 
 function readImageRenderOptions(prefix) {
+  const wStr = document.getElementById(`${prefix}opt-width`).value;
+  const hStr = document.getElementById(`${prefix}opt-height`).value;
   return {
-    width: parseInt(document.getElementById(`${prefix}opt-width`).value, 10),
-    height: parseInt(document.getElementById(`${prefix}opt-height`).value, 10),
+    width: wStr ? parseInt(wStr, 10) : null,
+    height: hStr ? parseInt(hStr, 10) : null,
     tolerance: parseFloat(
       document.getElementById(`${prefix}opt-tolerance`)?.value ?? "0.5",
     ),
