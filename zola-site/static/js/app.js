@@ -89,9 +89,9 @@ function wireCharsetControls(prefix) {
     const isBuiltinLines = charsetSelect.value === "lines";
     const isCustom = charsetSelect.value === "custom";
     if (customField) customField.style.display = isCustom ? "" : "none";
-    if (fontField) fontField.style.display = isBuiltinLines ? "none" : "";
+    if (fontField) fontField.style.display = isCustom ? "" : "none";
     if (glyphModeField)
-      glyphModeField.style.display = isBuiltinLines ? "none" : "";
+      glyphModeField.style.display = isCustom ? "" : "none";
   }
   charsetSelect.addEventListener("change", updateVisibility);
   updateVisibility();
