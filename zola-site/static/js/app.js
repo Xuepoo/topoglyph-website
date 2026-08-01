@@ -678,6 +678,44 @@ btnInspectAtlas.addEventListener("click", async () => {
   }
 });
 
+function saveState() {
+  const state = {};
+  document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach(el => {
+    if (el.type === 'file') return;
+    state[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  const activeTab = document.querySelector('.tab-btn.is-active')?.dataset.tab;
+  if (activeTab) state._activeTab = activeTab;
+  localStorage.setItem('topoglyph-state', JSON.stringify(state));
+}
+function restoreState() {
+  try {
+    const raw = localStorage.getItem('topoglyph-state');
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    Object.entries(state).forEach(([id, val]) => {
+      if (id === '_activeTab') {
+        const btn = document.querySelector(`.tab-btn[data-tab="${val}"]`);
+        if (btn) btn.click();
+        return;
+      }
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === 'checkbox') el.checked = val;
+      else el.value = val;
+      el.dispatchEvent(new Event('input'));
+      el.dispatchEvent(new Event('change'));
+    });
+  } catch (e) {}
+}
+document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach(el => {
+  el.addEventListener('change', saveState);
+  el.addEventListener('input', saveState);
+});
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', saveState);
+});
+restoreState();
 boot();
 const btnFullscreen = document.getElementById("btn-fullscreen");
 if (btnFullscreen) {
