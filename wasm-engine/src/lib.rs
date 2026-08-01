@@ -252,7 +252,7 @@ fn render_canvas(
     }
 
     let grid_opts = GridOptions {
-        columns: opts.width.unwrap_or(120),
+        columns: opts.width,
         rows: opts.height,
         cell_aspect_ratio: resolve_cell_aspect_ratio(opts.cell_aspect_ratio),
         ..Default::default()
