@@ -197,16 +197,20 @@ body {
 }
 
 .output-meta {
-  position: absolute;
-  bottom: 24px;
-  left: 24px;
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--ink-muted);
+  border-radius: 2px;
+}
+
+.editor-content .output-meta,
+.editor-header .output-meta {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
   background: var(--page-bg);
   padding: 4px 8px;
-  border-radius: 2px;
   pointer-events: none;
   z-index: 5;
 }

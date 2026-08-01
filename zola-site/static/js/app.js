@@ -273,6 +273,7 @@ btnRender.addEventListener("click", async () => {
       outputPre.textContent = result.text;
     }
     outputMeta.textContent = `${result.columns}x${result.rows} \u00b7 ${elapsed}ms`;
+    outputMeta.style.display = "";
     btnCopyText.disabled = false;
     btnCopyHtml.disabled = false;
     btnDownloadPng.disabled = false;
@@ -472,6 +473,7 @@ btnInspectAtlas.addEventListener("click", async () => {
     const summary = atlas.inspect();
     renderGlyphCards(summary);
     atlasOutputMeta.textContent = `${summary.font_id} \u00b7 ${summary.glyphs.length} ${t("js_glyphs_meta")}`;
+    atlasOutputMeta.style.display = "";
     setAtlasStatus(t("js_ready"));
   } catch (e) {
     setAtlasStatus(t("js_inspect_failed") + (e?.message ?? e), true);
