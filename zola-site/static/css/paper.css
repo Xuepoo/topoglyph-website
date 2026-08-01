@@ -21,7 +21,7 @@
   --code-bg: var(--code-bg);
   --dropzone-bg: var(--dropzone-bg);
   --mono:
-    "IBM Plex Mono", "JetBrains Mono", "Segoe UI Symbol", "Apple Braille", ui-monospace, "Cascadia Code", monospace;
+    "Cascadia Code", "JetBrains Mono", "IBM Plex Mono", ui-monospace, "Apple Braille", monospace;
   --serif: "IBM Plex Serif", Georgia, serif;
 }
 
@@ -176,7 +176,7 @@ body {
 
 .editor-content pre {
   margin: 0;
-  font-family: Consolas, "Courier New", "Segoe UI Symbol", "Apple Braille", monospace;
+  font-family: var(--mono);
   font-size: 11px;
   line-height: 1;
   color: var(--ink);
