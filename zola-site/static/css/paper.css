@@ -50,6 +50,11 @@
   --dropzone-bg: rgba(229, 115, 115, 0.08);
 }
 
+:root[data-theme="dark"] .header-icon {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+}
+
 * {
   box-sizing: border-box;
 }
