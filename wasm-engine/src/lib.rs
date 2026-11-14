@@ -10,6 +10,7 @@ use topoglyph_core::matching::{self, GlyphDescriptor, MatchOptions, MatchWeights
 use topoglyph_output::animation::TglyphAnimation;
 use topoglyph_output::encoder::{AnsiEncoder, HtmlEncoder, PlainTextEncoder, TextEncoder};
 use topoglyph_vectomancy::adapter::{self, SmoothingOptions};
+use topoglyph_vectomancy::line_art::{self, Foreground, LineArtOptions};
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -43,6 +44,37 @@ pub struct RenderOptions {
     pub glyph_mode: String,
     #[serde(default = "default_output_format")]
     pub output_format: String,
+    /// Pipeline: `match` (default, 0.3 behaviour), `rounded` (closed region
+    /// boundaries using only `─│╭╮╰╯`), or `centerline` (foreground skeleton
+    /// fed through the normal glyph matcher).
+    #[serde(default = "default_render_mode")]
+    pub render_mode: String,
+    /// `auto` | `dark` | `light` | `alpha`; only used by rounded/centerline.
+    #[serde(default)]
+    pub foreground: String,
+    /// Foreground coverage threshold (1..=255) for rounded/centerline.
+    #[serde(default = "default_threshold")]
+    pub threshold: u8,
+    /// Rounded-mode grid region cleanup; 0 keeps every region.
+    #[serde(default)]
+    pub min_region_area: usize,
+    /// Crop the foreground before sizing (rounded/centerline only).
+    #[serde(default)]
+    pub crop: bool,
+    /// Trim unused output cells and trailing text spaces.
+    #[serde(default)]
+    pub trim: bool,
+    /// Uniform output padding in cells; implies trim.
+    #[serde(default)]
+    pub padding: usize,
+}
+
+fn default_render_mode() -> String {
+    "match".to_string()
+}
+
+fn default_threshold() -> u8 {
+    128
 }
 
 fn default_chaikin_iters() -> usize {
@@ -236,45 +268,123 @@ impl From<&GlyphDescriptor> for GlyphSummary {
     }
 }
 
+/// Mirrors the CLI's validation so the browser surfaces the same errors
+/// instead of silently accepting combinations the native binary rejects.
+fn validate_options(opts: &RenderOptions) -> Result<(), String> {
+    if opts.width == Some(0) || opts.height == Some(0) {
+        return Err("grid dimensions must be positive".into());
+    }
+    if opts.padding > 1024 {
+        return Err("padding must be at most 1024 cells".into());
+    }
+    if opts.crop && opts.render_mode == "match" {
+        return Err("crop requires render_mode rounded or centerline".into());
+    }
+    if opts.min_region_area > 0 && opts.render_mode != "rounded" {
+        return Err("min_region_area requires render_mode rounded".into());
+    }
+    if !matches!(
+        opts.render_mode.as_str(),
+        "match" | "rounded" | "centerline"
+    ) {
+        return Err(format!(
+            "invalid render_mode '{}': expected match, rounded or centerline",
+            opts.render_mode
+        ));
+    }
+    Ok(())
+}
+
+fn line_art_options(opts: &RenderOptions) -> LineArtOptions {
+    LineArtOptions {
+        foreground: match opts.foreground.as_str() {
+            "dark" => Foreground::Dark,
+            "light" => Foreground::Light,
+            "alpha" => Foreground::Alpha,
+            _ => Foreground::Auto,
+        },
+        threshold: opts.threshold,
+        crop: opts.crop,
+        min_region_area: opts.min_region_area,
+    }
+}
+
 fn render_canvas(
     image_bytes: &[u8],
     opts: &RenderOptions,
     atlas: &GlyphAtlas,
 ) -> Result<TextCanvas, String> {
-    let smoothing = SmoothingOptions {
-        tolerance: opts.tolerance,
-        chaikin_iters: opts.chaikin_iters,
-    };
-    let mut scene = adapter::raster_to_smoothed_scene(image_bytes, opts.color, &smoothing)?;
+    validate_options(opts)?;
+    let line_opts = line_art_options(opts);
 
-    if opts.invert {
-        scene = adapter::invert_scene_colors(&scene);
+    let canvas = if opts.render_mode == "rounded" {
+        // Rounded mode builds its own ─│╭╮╰╯ alphabet, so the atlas is unused.
+        let mut canvas =
+            line_art::rounded_canvas(image_bytes, &line_opts, opts.width, opts.height)?;
+        if opts.invert {
+            for cell in &mut canvas.cells {
+                cell.color = Some("#342314".into());
+            }
+        }
+        canvas
+    } else {
+        let smoothing = SmoothingOptions {
+            tolerance: opts.tolerance,
+            chaikin_iters: opts.chaikin_iters,
+        };
+        let mut scene = if opts.render_mode == "centerline" {
+            let scene = line_art::centerline_scene(image_bytes, &line_opts)?;
+            // Validate before the shared clipping code allocates the grid.
+            line_art::grid_size(opts.width, opts.height, scene.dimensions)?;
+            adapter::smooth_scene(&scene, &smoothing)
+        } else {
+            adapter::raster_to_smoothed_scene(image_bytes, opts.color, &smoothing)?
+        };
+
+        if opts.invert {
+            scene = adapter::invert_scene_colors(&scene);
+        }
+
+        let (columns, rows) = if opts.render_mode == "centerline" {
+            let (w, h) = line_art::grid_size(opts.width, opts.height, scene.dimensions)?;
+            (Some(w), Some(h))
+        } else {
+            (opts.width, opts.height)
+        };
+        let grid_opts = GridOptions {
+            columns,
+            rows,
+            cell_aspect_ratio: resolve_cell_aspect_ratio(opts.cell_aspect_ratio),
+            ..Default::default()
+        };
+        let (w, h) = grid_opts.resolve_dimensions(scene.dimensions);
+        if w > 4096 || h > 4096 || w.checked_mul(h).is_none_or(|n| n > 4_194_304) {
+            return Err("grid exceeds 4096 per axis or 4 million cells".into());
+        }
+        let (out_cols, out_rows, cell_descriptors) = clipping::process_scene(&scene, &grid_opts);
+
+        let mut weights = resolve_preset(&opts.preset);
+        weights.frequency_bias = resolve_frequency_bias(&opts.glyph_mode);
+        let match_options = MatchOptions {
+            top_k: opts.top_k,
+            relaxation_rounds: opts.relaxation_rounds,
+        };
+
+        matching::match_scene_indexed(
+            out_cols,
+            out_rows,
+            &cell_descriptors,
+            &atlas.glyphs,
+            Some(&atlas.index),
+            &weights,
+            &match_options,
+        )
+    };
+
+    if opts.trim || opts.padding > 0 {
+        return line_art::trim_canvas(&canvas, opts.padding);
     }
-
-    let grid_opts = GridOptions {
-        columns: opts.width,
-        rows: opts.height,
-        cell_aspect_ratio: resolve_cell_aspect_ratio(opts.cell_aspect_ratio),
-        ..Default::default()
-    };
-    let (out_cols, out_rows, cell_descriptors) = clipping::process_scene(&scene, &grid_opts);
-
-    let mut weights = resolve_preset(&opts.preset);
-    weights.frequency_bias = resolve_frequency_bias(&opts.glyph_mode);
-    let match_options = MatchOptions {
-        top_k: opts.top_k,
-        relaxation_rounds: opts.relaxation_rounds,
-    };
-
-    Ok(matching::match_scene_indexed(
-        out_cols,
-        out_rows,
-        &cell_descriptors,
-        &atlas.glyphs,
-        Some(&atlas.index),
-        &weights,
-        &match_options,
-    ))
+    Ok(canvas)
 }
 
 fn encode_canvas(canvas: &TextCanvas, output_format: &str) -> Result<String, String> {
@@ -461,6 +571,7 @@ pub fn builtin_charsets() -> Vec<JsValue> {
 #[cfg(test)]
 mod tests {
     use super::resolve_cell_aspect_ratio;
+    use super::*;
 
     #[test]
     fn cell_aspect_ratio_accepts_browser_measurements() {
@@ -472,5 +583,91 @@ mod tests {
         for value in [None, Some(f32::NAN), Some(0.0), Some(-0.5), Some(1.1)] {
             assert_eq!(resolve_cell_aspect_ratio(value), 0.5);
         }
+    }
+
+    // The three render modes mirror `topoglyph-cli render` (0.4.0). These run
+    // natively, since the wasm-bindgen entry points need a JS runtime.
+    const STROKE_PNG: &[u8] = include_bytes!("../tests/fixtures/stroke.png");
+
+    fn options(render_mode: &str) -> RenderOptions {
+        RenderOptions {
+            width: Some(24),
+            height: Some(12),
+            cell_aspect_ratio: Some(0.5),
+            tolerance: 0.5,
+            chaikin_iters: 1,
+            invert: false,
+            color: false,
+            top_k: 8,
+            relaxation_rounds: 3,
+            preset: "line-art".into(),
+            glyph_mode: "set".into(),
+            output_format: "text".into(),
+            render_mode: render_mode.into(),
+            foreground: "auto".into(),
+            threshold: 128,
+            min_region_area: 0,
+            crop: false,
+            trim: false,
+            padding: 0,
+        }
+    }
+
+    fn builtin_atlas() -> GlyphAtlas {
+        GlyphAtlas::from_text("", &AtlasOptions::default()).unwrap()
+    }
+
+    fn plain_text(canvas: &TextCanvas) -> String {
+        String::from_utf8(PlainTextEncoder::new().encode(canvas).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn rounded_mode_emits_only_box_drawing_glyphs() {
+        let mut opts = options("rounded");
+        opts.trim = true;
+        let text = plain_text(&render_canvas(STROKE_PNG, &opts, &builtin_atlas()).unwrap());
+        assert!(
+            text.chars().any(|ch| "─│╭╮╰╯".contains(ch)),
+            "rounded mode produced no box glyphs: {text:?}"
+        );
+        assert!(
+            text.chars().all(|ch| ch == '\n' || " ─│╭╮╰╯".contains(ch)),
+            "rounded mode emitted a glyph outside its fixed alphabet: {text:?}"
+        );
+    }
+
+    #[test]
+    fn match_and_centerline_honour_the_requested_grid() {
+        let atlas = builtin_atlas();
+        for mode in ["match", "centerline"] {
+            let canvas = render_canvas(STROKE_PNG, &options(mode), &atlas).unwrap();
+            assert_eq!((canvas.width, canvas.height), (24, 12), "{mode}");
+        }
+    }
+
+    #[test]
+    fn option_validation_matches_the_cli() {
+        let atlas = builtin_atlas();
+
+        let mut opts = options("match");
+        opts.crop = true;
+        assert!(render_canvas(STROKE_PNG, &opts, &atlas)
+            .unwrap_err()
+            .contains("crop requires"));
+
+        let mut opts = options("centerline");
+        opts.min_region_area = 3;
+        assert!(render_canvas(STROKE_PNG, &opts, &atlas)
+            .unwrap_err()
+            .contains("min_region_area requires"));
+
+        let mut opts = options("rounded");
+        opts.threshold = 0;
+        assert!(render_canvas(STROKE_PNG, &opts, &atlas).is_err());
+
+        let mut opts = options("rounded");
+        opts.padding = 2;
+        let padded = render_canvas(STROKE_PNG, &opts, &atlas).unwrap();
+        assert!(padded.width > 0 && padded.height > 0);
     }
 }
