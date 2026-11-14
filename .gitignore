@@ -16,3 +16,4 @@ zola-site/static/wasm/*.js
 zola-site/static/wasm/*.d.ts
 zola-site/static/wasm/package.json
 zola-site/static/wasm/.gitignore
+.carryctx/config.local.toml

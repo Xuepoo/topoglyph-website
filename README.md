@@ -9,13 +9,27 @@ The official web frontend for **TopoGlyph** — a topology-to-glyph text-art ren
 ## Architecture
 
 1. **`wasm-engine/`**
-   - A Rust `cdylib` crate bridging `topoglyph-core`/`-atlas`/`-output`/`-vectomancy` (pinned to their published crates.io releases) to JavaScript via `wasm-bindgen`/`serde-wasm-bindgen`.
+   - A Rust `cdylib` crate bridging `topoglyph-core`/`-atlas`/`-output`/`-vectomancy` (pinned to their published crates.io releases, currently **0.4.0**) to JavaScript via `wasm-bindgen`/`serde-wasm-bindgen`.
    - `AtlasHandle` builds a glyph atlas once and reuses it across many `render_with_atlas` calls, so video conversion doesn't re-rasterize a custom font on every single frame.
    - `AnimationBuilder` assembles a sequence of matched frames into a `.tglyph` text animation (see `topoglyph_output::animation`), matching the CLI's own `topoglyph video` output format.
+   - `RenderOptions` mirrors `topoglyph-cli render`'s flags 1:1, including the 0.4.0 line-art pipeline: `render_mode` (`match`/`rounded`/`centerline`), `foreground`, `threshold`, `min_region_area`, `crop`, `trim`, `padding`. The same invalid combinations the CLI rejects are rejected here (`crop` outside rounded/centerline, `min_region_area` outside rounded, `threshold` of 0, `padding` above 1024 cells).
 2. **`zola-site/`**
    - A [Zola](https://www.getzola.org/) static site with a self-authored "paper" aesthetic (see `static/css/paper.css`) — a monospace `<pre>` output panel wrapped in a perforated-edge, receipt-paper-styled container, rather than depending on a full CSS framework.
    - `static/js/app.js` wires three tabs: Image (upload → render), Video/GIF (native `<video>`/`<canvas>` frame extraction → `.tglyph` conversion → playback), and Glyph Atlas (inspects the configured atlas's masks/ports/features).
+   - `static/js/render-mode.js` holds the render-mode normalizing/visibility logic so it can be unit-tested without a DOM (`node --test`).
    - No FFmpeg in the browser: video/GIF decoding uses the browser's own `<video>` element, since `topoglyph-video`'s `ffmpeg-next` dependency can't target `wasm32-unknown-unknown` (the native CLI gates it behind the `video` cargo feature for the same reason).
+
+## Render modes
+
+Introduced with TopoGlyph 0.4.0 and exposed in the Image tab:
+
+| Mode         | Pipeline                                                                                 | Atlas needed |
+| ------------ | ---------------------------------------------------------------------------------------- | ------------ |
+| `match`      | 0.3 pipeline: skeleton + RDP/Chaikin smoothing → grid clipping → 6-factor glyph matching | yes          |
+| `rounded`    | Builds connected region boundaries directly, using only `─│╭╮╰╯` (fixed alphabet)        | no           |
+| `centerline` | Thins the ink to a one-pixel centerline first, then feeds it through the normal matcher  | yes          |
+
+`rounded` disables the charset picker (it constructs its own alphabet) and adds `Min Region Area` cleanup; both line-art modes add a coverage threshold, foreground selection (auto/dark/light/alpha) and optional cropping. `Trim`/`Padding` apply to every mode.
 
 ## Local Development
 

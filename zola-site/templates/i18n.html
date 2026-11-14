@@ -1,6 +1,9 @@
 <script>
   window.I18N = {
     js_ready: {{ trans(key="js_ready", lang=lang) | json_encode | safe }},
+    render_mode_hint_match: {{ trans(key="render_mode_hint_match", lang=lang) | json_encode | safe }},
+    render_mode_hint_rounded: {{ trans(key="render_mode_hint_rounded", lang=lang) | json_encode | safe }},
+    render_mode_hint_centerline: {{ trans(key="render_mode_hint_centerline", lang=lang) | json_encode | safe }},
     js_wasm_load_failed: {{ trans(key="js_wasm_load_failed", lang=lang) | json_encode | safe }},
     js_rendering: {{ trans(key="js_rendering", lang=lang) | json_encode | safe }},
     js_render_failed: {{ trans(key="js_render_failed", lang=lang) | json_encode | safe }},

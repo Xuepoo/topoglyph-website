@@ -21,6 +21,50 @@
     </div>
     <div class="status-line" id="status-line" aria-live="polite" style="margin-bottom: 16px;">{{ trans(key="loading_wasm", lang=lang) | safe }}</div>
 
+    <div class="controls-grid" style="margin-top: 16px">
+      <div class="field">
+        <label for="opt-render-mode">{{ trans(key="render_mode_label", lang=lang) | safe }}</label>
+        <select id="opt-render-mode">
+          <option value="match" selected>{{ trans(key="render_mode_match", lang=lang) | safe }}</option>
+          <option value="rounded">{{ trans(key="render_mode_rounded", lang=lang) | safe }}</option>
+          <option value="centerline">{{ trans(key="render_mode_centerline", lang=lang) | safe }}</option>
+        </select>
+        <p class="field-hint" id="render-mode-hint">{{ trans(key="render_mode_hint_match", lang=lang) | safe }}</p>
+      </div>
+      <div class="field" data-mode-when="rounded centerline">
+        <label for="opt-threshold"
+          >{{ trans(key="threshold_label", lang=lang) | safe }} <span class="range-value" id="val-threshold">128</span></label
+        >
+        <input type="range" id="opt-threshold" min="1" max="255" step="1" value="128" />
+      </div>
+      <div class="field" data-mode-when="rounded centerline">
+        <label for="opt-foreground">{{ trans(key="foreground_label", lang=lang) | safe }}</label>
+        <select id="opt-foreground">
+          <option value="auto" selected>{{ trans(key="foreground_auto", lang=lang) | safe }}</option>
+          <option value="dark">{{ trans(key="foreground_dark", lang=lang) | safe }}</option>
+          <option value="light">{{ trans(key="foreground_light", lang=lang) | safe }}</option>
+          <option value="alpha">{{ trans(key="foreground_alpha", lang=lang) | safe }}</option>
+        </select>
+      </div>
+      <div class="field field-checkbox" data-mode-when="rounded centerline">
+        <input type="checkbox" id="opt-crop" />
+        <label for="opt-crop">{{ trans(key="crop_label", lang=lang) | safe }}</label>
+      </div>
+      <div class="field" data-mode-when="rounded">
+        <label for="opt-min-region-area">{{ trans(key="min_region_area_label", lang=lang) | safe }}</label>
+        <input type="number" id="opt-min-region-area" min="0" max="4096" step="1" value="0" />
+        <p class="field-hint">{{ trans(key="min_region_area_hint", lang=lang) | safe }}</p>
+      </div>
+      <div class="field field-checkbox">
+        <input type="checkbox" id="opt-trim" />
+        <label for="opt-trim">{{ trans(key="trim_label", lang=lang) | safe }}</label>
+      </div>
+      <div class="field">
+        <label for="opt-padding">{{ trans(key="padding_label", lang=lang) | safe }}</label>
+        <input type="number" id="opt-padding" min="0" max="64" step="1" value="0" />
+      </div>
+    </div>
+
     {% set scope = "" %} {% include "charset_controls.html" %}
 
     <div class="controls-grid" style="margin-top: 16px">
@@ -44,32 +88,32 @@
         <input type="checkbox" id="opt-color" />
         <label for="opt-color">{{ trans(key="color_label", lang=lang) | safe }}</label>
       </div>
-      <div class="field">
+      <div class="field" data-mode-when="match centerline">
         <label for="opt-preset">{{ trans(key="preset_label", lang=lang) | safe }}</label>
         <select id="opt-preset">
           <option value="line-art">{{ trans(key="preset_line_art", lang=lang) | safe }}</option>
           <option value="han-emoji">{{ trans(key="preset_han_emoji", lang=lang) | safe }}</option>
         </select>
       </div>
-      <div class="field">
+      <div class="field" data-mode-when="match centerline">
         <label for="opt-tolerance"
           >{{ trans(key="tolerance_label", lang=lang) | safe }} <span class="range-value" id="val-tolerance">0.5</span></label
         >
         <input type="range" id="opt-tolerance" min="0" max="2" step="0.1" value="0.5" />
       </div>
-      <div class="field">
+      <div class="field" data-mode-when="match centerline">
         <label for="opt-chaikin"
           >{{ trans(key="chaikin_label", lang=lang) | safe }} <span class="range-value" id="val-chaikin">1</span></label
         >
         <input type="range" id="opt-chaikin" min="0" max="3" step="1" value="1" />
       </div>
-      <div class="field">
+      <div class="field" data-mode-when="match centerline">
         <label for="opt-topk"
           >{{ trans(key="top_k_label", lang=lang) | safe }} <span class="range-value" id="val-topk">8</span></label
         >
         <input type="range" id="opt-topk" min="1" max="16" step="1" value="8" />
       </div>
-      <div class="field">
+      <div class="field" data-mode-when="match centerline">
         <label for="opt-relaxation"
           >{{ trans(key="relaxation_label", lang=lang) | safe }} <span class="range-value" id="val-relaxation">3</span></label
         >

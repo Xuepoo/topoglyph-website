@@ -1,10 +1,7 @@
-import init, {
-  AtlasHandle,
-  render_image,
-  renderWithAtlas,
-} from "/wasm/topoglyph_wasm_engine.js";
+import init, { AtlasHandle, render_image, renderWithAtlas } from "/wasm/topoglyph_wasm_engine.js";
 import { describeGridSizing } from "./grid-sizing.js";
 import { measureOutputCellAspect } from "./output-aspect.js";
+import { normalizeRenderModeOptions, visibleForMode } from "./render-mode.js";
 import {
   PngExportError,
   canvasToPngBlob,
@@ -77,15 +74,9 @@ function wireCharsetControls(prefix) {
   const charsetSelect = document.getElementById(`${prefix}opt-charset`);
   if (!charsetSelect) return;
 
-  const customField = document.querySelector(
-    `.custom-chars-field[data-scope="${prefix}"]`,
-  );
-  const fontField = document.querySelector(
-    `.font-field[data-scope="${prefix}"]`,
-  );
-  const glyphModeField = document.querySelector(
-    `.glyph-mode-field[data-scope="${prefix}"]`,
-  );
+  const customField = document.querySelector(`.custom-chars-field[data-scope="${prefix}"]`);
+  const fontField = document.querySelector(`.font-field[data-scope="${prefix}"]`);
+  const glyphModeField = document.querySelector(`.glyph-mode-field[data-scope="${prefix}"]`);
 
   function updateVisibility() {
     const isCustom = charsetSelect.value === "custom";
@@ -112,8 +103,7 @@ async function buildAtlasFromControls(prefix) {
     }
   }
 
-  const customChars =
-    document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
+  const customChars = document.getElementById(`${prefix}opt-custom-chars`)?.value || "";
   const fontInput = document.getElementById(`${prefix}opt-font`);
   const fontFile = fontInput?.files?.[0];
   if (!fontFile) {
@@ -164,6 +154,61 @@ bindRangeDisplay("opt-tolerance", "val-tolerance");
 bindRangeDisplay("opt-chaikin", "val-chaikin");
 bindRangeDisplay("opt-topk", "val-topk");
 bindRangeDisplay("opt-relaxation", "val-relaxation");
+bindRangeDisplay("opt-threshold", "val-threshold");
+
+// ---------------------------------------------------------------------------
+// Render mode (match / rounded / centerline)
+//
+// Rounded mode constructs its own ─│╭╮╰╯ alphabet in Rust, so it neither
+// needs nor accepts an atlas: the charset picker is pinned to "lines" while
+// it is selected, and the matcher-only knobs are hidden.
+// ---------------------------------------------------------------------------
+
+const renderModeSelect = document.getElementById("opt-render-mode");
+
+function currentRenderMode() {
+  return renderModeSelect?.value ?? "match";
+}
+
+function applyRenderModeVisibility() {
+  const mode = currentRenderMode();
+
+  document.querySelectorAll("[data-mode-when]").forEach((el) => {
+    el.classList.toggle("is-hidden", !visibleForMode(mode, el.dataset.modeWhen));
+  });
+
+  const hint = document.getElementById("render-mode-hint");
+  if (hint) {
+    hint.textContent = t(
+      mode === "rounded"
+        ? "render_mode_hint_rounded"
+        : mode === "centerline"
+          ? "render_mode_hint_centerline"
+          : "render_mode_hint_match",
+    );
+  }
+
+  const charsetSelect = document.getElementById("opt-charset");
+  if (!charsetSelect) return;
+  if (mode === "rounded") {
+    if (charsetSelect.dataset.lockedMode !== "rounded") {
+      charsetSelect.dataset.previousCharset = charsetSelect.value;
+      charsetSelect.dataset.lockedMode = "rounded";
+      charsetSelect.disabled = true;
+    }
+    if (charsetSelect.value !== "lines") {
+      charsetSelect.value = "lines";
+      charsetSelect.dispatchEvent(new Event("change"));
+    }
+  } else if (charsetSelect.dataset.lockedMode === "rounded") {
+    charsetSelect.disabled = false;
+    charsetSelect.value = charsetSelect.dataset.previousCharset || "lines";
+    delete charsetSelect.dataset.lockedMode;
+    charsetSelect.dispatchEvent(new Event("change"));
+  }
+}
+
+renderModeSelect?.addEventListener("change", applyRenderModeVisibility);
 
 function wireDropzone(dropzoneEl, fileInputEl, onFile) {
   dropzoneEl.addEventListener("click", () => fileInputEl.click());
@@ -205,9 +250,7 @@ document.addEventListener("paste", (e) => {
       const file = item.getAsFile();
       if (file) {
         // Automatically switch to Image tab if paste happens
-        const imageTabBtn = document.querySelector(
-          '.tab-btn[data-tab="image"]',
-        );
+        const imageTabBtn = document.querySelector('.tab-btn[data-tab="image"]');
         if (imageTabBtn && !imageTabBtn.classList.contains("is-active")) {
           imageTabBtn.click();
         }
@@ -221,33 +264,31 @@ document.addEventListener("paste", (e) => {
 function readImageRenderOptions(prefix) {
   const wStr = document.getElementById(`${prefix}opt-width`).value;
   const hStr = document.getElementById(`${prefix}opt-height`).value;
+  const renderMode = document.getElementById(`${prefix}opt-render-mode`)?.value ?? "match";
   return {
     width: wStr ? parseInt(wStr, 10) : null,
     height: hStr ? parseInt(hStr, 10) : null,
     cell_aspect_ratio: measureOutputCellAspect(),
-    tolerance: parseFloat(
-      document.getElementById(`${prefix}opt-tolerance`)?.value ?? "0.5",
-    ),
-    chaikin_iters: parseInt(
-      document.getElementById(`${prefix}opt-chaikin`)?.value ?? "1",
-      10,
-    ),
+    tolerance: parseFloat(document.getElementById(`${prefix}opt-tolerance`)?.value ?? "0.5"),
+    chaikin_iters: parseInt(document.getElementById(`${prefix}opt-chaikin`)?.value ?? "1", 10),
     invert: document.getElementById(`${prefix}opt-invert`)?.checked ?? false,
     color: document.getElementById(`${prefix}opt-color`)?.checked ?? false,
-    top_k: parseInt(
-      document.getElementById(`${prefix}opt-top-k`)?.value ?? "8",
-      10,
-    ),
+    top_k: parseInt(document.getElementById(`${prefix}opt-top-k`)?.value ?? "8", 10),
     relaxation_rounds: parseInt(
       document.getElementById(`${prefix}opt-relaxation`)?.value ?? "3",
       10,
     ),
     preset: document.getElementById(`${prefix}opt-preset`).value,
-    glyph_mode:
-      document.getElementById(`${prefix}opt-glyph-mode`)?.value ?? "set",
-    output_format: document.getElementById(`${prefix}opt-color`)?.checked
-      ? "html"
-      : "text",
+    glyph_mode: document.getElementById(`${prefix}opt-glyph-mode`)?.value ?? "set",
+    output_format: document.getElementById(`${prefix}opt-color`)?.checked ? "html" : "text",
+    ...normalizeRenderModeOptions(renderMode, {
+      foreground: document.getElementById(`${prefix}opt-foreground`)?.value,
+      threshold: document.getElementById(`${prefix}opt-threshold`)?.value,
+      min_region_area: document.getElementById(`${prefix}opt-min-region-area`)?.value,
+      crop: document.getElementById(`${prefix}opt-crop`)?.checked,
+      trim: document.getElementById(`${prefix}opt-trim`)?.checked,
+      padding: document.getElementById(`${prefix}opt-padding`)?.value,
+    }),
   };
 }
 
@@ -261,7 +302,8 @@ btnRender.addEventListener("click", async () => {
     const start = performance.now();
 
     let result;
-    const charset = document.getElementById("opt-charset").value;
+    const charset =
+      options.render_mode === "rounded" ? "lines" : document.getElementById("opt-charset").value;
     if (charset === "lines") {
       result = render_image(imageBytes, options);
     } else {
@@ -353,10 +395,7 @@ const gridSizeStatus = document.getElementById("grid-size-status");
 
 function updateGridSizeStatus() {
   if (!gridSizeStatus) return;
-  const description = describeGridSizing(
-    gridWidthInput?.value ?? "",
-    gridHeightInput?.value ?? "",
-  );
+  const description = describeGridSizing(gridWidthInput?.value ?? "", gridHeightInput?.value ?? "");
   gridSizeStatus.textContent = t(description.key, description.params);
   gridSizeStatus.classList.toggle("is-fixed", description.kind === "fixed");
 }
@@ -465,12 +504,10 @@ btnInspectAtlas.addEventListener("click", async () => {
 
 function saveState() {
   const state = {};
-  document
-    .querySelectorAll('input[id*="opt-"], select[id*="opt-"]')
-    .forEach((el) => {
-      if (el.type === "file") return;
-      state[el.id] = el.type === "checkbox" ? el.checked : el.value;
-    });
+  document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach((el) => {
+    if (el.type === "file") return;
+    state[el.id] = el.type === "checkbox" ? el.checked : el.value;
+  });
   const activeTab = document.querySelector(".tab-btn.is-active")?.dataset.tab;
   if (activeTab) state._activeTab = activeTab;
   localStorage.setItem("topoglyph-state", JSON.stringify(state));
@@ -495,16 +532,15 @@ function restoreState() {
     });
   } catch {}
 }
-document
-  .querySelectorAll('input[id*="opt-"], select[id*="opt-"]')
-  .forEach((el) => {
-    el.addEventListener("change", saveState);
-    el.addEventListener("input", saveState);
-  });
+document.querySelectorAll('input[id*="opt-"], select[id*="opt-"]').forEach((el) => {
+  el.addEventListener("change", saveState);
+  el.addEventListener("input", saveState);
+});
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", saveState);
 });
 restoreState();
+applyRenderModeVisibility();
 updateGridSizeStatus();
 boot();
 const btnFullscreen = document.getElementById("btn-fullscreen");
