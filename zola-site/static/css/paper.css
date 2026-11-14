@@ -589,6 +589,11 @@ nav.lang-switch span[aria-current="page"] {
   display: none;
 }
 
+/* Render-mode dependent controls (match / rounded / centerline) */
+[data-mode-when].is-hidden {
+  display: none;
+}
+
 /* ---- Progress bar (video conversion) ---- */
 .progress-track {
   height: 6px;
